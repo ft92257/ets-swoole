@@ -2,7 +2,7 @@
 /**
  * 微服务调用基类
  */
-namespace ets\service;
+namespace Ets\service;
 
 use Ets\base\EtsException;
 use Ets\Ets;

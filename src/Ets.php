@@ -3,7 +3,6 @@
 namespace Ets;
 
 use Ets\base\Application;
-use Ets\base\EtsException;
 use Ets\server\HttpServer;
 
 
