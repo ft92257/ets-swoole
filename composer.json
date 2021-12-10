@@ -1,7 +1,15 @@
 {
     "name": "ets-php/swoole",
     "description": "基于Swoole 4.3.5+ 的高性能PHP协程框架，代码清晰可维护，高可扩展，使用简单，亿级日流量实战验证。支持Component依赖注入，redis/rabbitMq队列，微服务调用，熔断，限流，跨服务事件，异常报警，连接池，协程级全局变量，Http服务，Tcp服务，Console命令行模式，windows环境本地调试...",
+    "keywords": ["swoole","ets","php","框架", "协程", "ets-swoole"],
+    "homepage": "",
+    "license": "MIT",
     "require": {
         "php": ">=7.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ets\\": "src"
+        }
     }
 }
