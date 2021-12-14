@@ -173,4 +173,22 @@ class Application extends BaseObject
         return $this->_components[$name];
     }
 
+    /**
+     * 获取实现了某个基类/接口的所有组件
+     *
+     * @param $superClass
+     * @return array
+     */
+    public function getComponentsBySuperClass($superClass)
+    {
+        $components = [];
+        foreach ($this->_components as $name => $component) {
+            if ($component instanceof $superClass) {
+                $components[] = $component;
+            }
+        }
+
+        return $components;
+    }
+
 }

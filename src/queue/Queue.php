@@ -4,6 +4,8 @@ namespace Ets\queue;
 
 use Ets\base\Component;
 use Ets\Ets;
+use Ets\event\EventHelper;
+use Ets\event\QueuePushEvent;
 use Ets\helper\ToolsHelper;
 use Ets\queue\driver\QueueBaseDriver;
 use Ets\queue\driver\QueueRedisDriver;
@@ -50,6 +52,8 @@ class Queue extends Component
             $message = ToolsHelper::toJson($job);
 
             $this->getDriver()->push($this, $message, $delay);
+
+            EventHelper::trigger(QueuePushEvent::build($job));
 
         } catch (\Throwable $e) {
             // 推送失败，重试 todo

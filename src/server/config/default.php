@@ -18,6 +18,9 @@ $config = [
         'defaultJsonRouter' => [
             'class' => \Ets\server\router\JsonRouter::class,
         ],
+        'queueEvent' => [
+            'class' => \Ets\queue\BroadcastQueue::class,
+        ],
     ],
 
     'params' => [],

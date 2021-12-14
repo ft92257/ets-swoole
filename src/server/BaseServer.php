@@ -36,11 +36,6 @@ abstract class BaseServer extends Component
         'enable_preemptive_scheduler' => 1,
     ];
 
-    // todo
-    protected $logConfig = [
-
-    ];
-
 
     public abstract function run();
 
