@@ -2,7 +2,7 @@
 namespace Ets\pool;
 
 use Ets\base\EtsException;
-use Ets\pool\wrapper\BasePoolWrapper;
+use Ets\pool\connector\BasePoolConnector;
 
 
 class SinglePool extends BasePool
@@ -10,7 +10,7 @@ class SinglePool extends BasePool
 
     /**
      * 获取连接, 固定单例模式
-     * @return BasePoolWrapper
+     * @return BasePoolConnector
      * @throws \Exception
      */
     public function getConnection()

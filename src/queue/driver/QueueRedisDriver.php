@@ -2,13 +2,14 @@
 
 namespace Ets\queue\driver;
 
+use Ets\base\EtsException;
 use Ets\Ets;
-use Ets\pool\wrapper\RedisWrapper;
+use Ets\pool\connector\RedisConnector;
 use Ets\queue\Queue;
 
 class QueueRedisDriver extends QueueBaseDriver
 {
-    protected $redisComponent = RedisWrapper::class;
+    protected $redisComponent = RedisConnector::class;
 
     // 分片数量，使数据尽量均匀分撒到redis集群上
     protected $shardCount = 8;

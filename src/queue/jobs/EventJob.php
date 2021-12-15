@@ -11,12 +11,12 @@ class EventJob extends BaseJob
     /**
      * @var string $name 事件名称
      */
-    protected $name;
+    public $name;
 
     /**
      * @var string $payloadString json格式数据
      */
-    protected $payloadString;
+    public $payloadString;
 
 
     public function execute()
@@ -34,6 +34,6 @@ class EventJob extends BaseJob
             return;
         }
 
-        EventHelper::trigger($eventClass::build($payload));
+        EventHelper::localTrigger($eventClass::build($payload));
     }
 }

@@ -7,45 +7,90 @@ use Ets\base\BaseArrayObject;
 use Ets\Ets;
 use Ets\base\EtsException;
 use Ets\coroutine\CoroutineVar;
-use Ets\pool\wrapper\MysqlWrapper;
+use Ets\pool\connector\MysqlConnector;
 
-abstract class Model extends BaseArrayObject
+abstract class Model extends BaseArrayObject implements ModelInterface
 {
-    // 创建时间字段
-    protected static $createdAt = 'created_at';
-    // 修改时间字段
-    protected static $updatedAt = 'updated_at';
-
-    public static $command = Command::class;
-
-    // getter配置  属性名 -> 方法名
-    protected $getters = ['attributes' => 'getAttributes'];
-
-    private $getterValues = [];
-
-    protected static $dbComponent = MysqlWrapper::class;
-
     /**
-     * @return MysqlWrapper
+     * @return static
      */
-    public static function getDb()
+    public static function build()
     {
-        return Ets::component(static::$dbComponent);
+        return new static();
     }
 
-    abstract protected static function getPrimaryKey();
+    /**
+     * @override
+     * @return array
+     */
+    public function getCreateTimeValue(): array
+    {
+        return [
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+    }
 
+    /**
+     * @override
+     * @return array
+     */
+    public function getUpdateTimeValue(): array
+    {
+        return [
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+    }
+
+    /**
+     * @override
+     * @return string
+     */
+    public function getDbComponent(): string
+    {
+        return MysqlConnector::class;
+    }
+
+    /**
+     * @param $isUseSlave
+     * @return MysqlConnector
+     */
+    protected function getDb(bool $isUseSlave = false)
+    {
+        $db = $isUseSlave ? self::getSlaveDb() : Ets::component($this->getDbComponent());
+
+        return $db;
+    }
+
+    /**
+     * @return CommandInterface
+     */
+    protected function getCommand()
+    {
+        return Ets::component(Command::class);
+    }
+
+    /**
+     * 主键值，修改操作时需用到
+     *
+     * @override
+     * @return string|array
+     */
+    public function getPrimaryKey()
+    {
+        return 'id';
+    }
 
     /**
      * 从库配置
      *
      * @return array
      */
-    public static function getSlaveConfig()
+    public function getSlaveConfig() :array
     {
         $slaves = [
             'db' => 30, //30%
-            'dbSlave' => 100, //70%
+            'dbSlave' => 70, //70%
         ];
 
         // return $slaves;
@@ -54,19 +99,22 @@ abstract class Model extends BaseArrayObject
     }
 
     /**
-     * @return mixed
+     * @return MysqlConnector
      */
-    protected static function getSlaveDb()
+    protected function getSlaveDb()
     {
-        $slaves = static::getSlaveConfig();
+        $slaves = $this->getSlaveConfig();
         if (empty($slaves)) {
-            return static::getDb();
+            return $this->getDb();
         }
 
         $random = mt_rand(1, 100);
         $dbName = '';
+        $rateNum = 0;
         foreach ($slaves as $db => $rate) {
-            if ($random <= $rate) {
+            $rateNum += $rate;
+
+            if ($random <= $rateNum) {
                 $dbName = $db;
                 break;
             }
@@ -79,68 +127,66 @@ abstract class Model extends BaseArrayObject
     }
 
     /**
-     * 返回表名
-     * @return string
+     * 查询单条记录
+     *
+     * @param Query $query
+     * @param $returnClass
+     *
+     * @return mixed
      */
-    public abstract static function tableName();
-
-    public static function checkPrimaryKey($condition)
+    public function getOne(Query $query, string $returnClass = BaseArrayObject::class)
     {
+        $db = $this->getDb(true);
 
+        $command = $this->getCommand();
+
+        $row = $command->queryOne($db, $query->buildQuerySql());
+
+        if (empty($returnClass)) {
+            return $row;
+        }
+
+        if (empty($row)) {
+            return null;
+        }
+
+        return new $returnClass($row);
     }
 
-    /**
-     * @param $slave
-     * @return Command
-     */
-    public static function createCommand($slave = false)
+    public function getAll(Query $query, string $returnClass = BaseArrayObject::class)
     {
-        $command = static::$command;
+        $db = $this->getDb(true);
 
-        $db = $slave ? self::getSlaveDb() : static::getDb();
+        $command = $this->getCommand();
 
-        return new $command(['db' => $db, 'modelClass' => static::class]);
+        $rows = $command->queryAll($db, $query->buildQuerySql());
+
+        if (empty($returnClass)) {
+            return $rows;
+        }
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        $objects = [];
+        foreach ($rows as $row) {
+            $objects[] = new $returnClass($row);
+        }
+
+        return $objects;
     }
 
     /**
      * @return Query
      */
-    protected static function find()
+    protected function createQuery()
     {
-        $command = static::createCommand(true);
-
         $query = new Query([
-            'command' => $command,
-            'tableName' => static::tableName(),
-            'modelClass' => static::class,
+            'tableName' => $this->getTableName(),
         ]);
 
         return $query;
-    }
-
-    public function __get($name)
-    {
-        $getters = array_merge(['attributes' => 'getAttributes'], $this->getters);
-        if (isset($getters[$name])) {
-            $getter = $getters[$name];
-
-            if (! isset($this->getterValues[$name])) {
-                $this->getterValues[$name] = $this->$getter();
-            }
-
-            return $this->getterValues[$name];
-        }
-
-        throw new EtsException('Getting unknown property: ' . get_class($this) . '::' . $name);
-    }
-
-    public function getAttributes()
-    {
-        $ret = get_object_vars($this);
-        unset($ret['getters']);
-        unset($ret['getterValues']);
-
-        return $ret;
     }
 
     /**
@@ -148,22 +194,21 @@ abstract class Model extends BaseArrayObject
      * @param $condition
      * @return mixed
      */
-    protected static function _getOne($condition)
+    protected function getOneByCondition($condition)
     {
         $objects = CoroutineVar::getArrayList(EtsConst::COROUTINE_MODEL_OBJECTS);
 
         $key = md5(ToolsHelper::toJson($condition));
+
         if (! isset($objects[static::class][$key])) {
-            $data = static::find()->where($condition)->asArray()->one();
-            if (empty($data)) {
-                return null;
-            } else {
-                $ret = new static($data);
-            }
+
+            $query = $this->createQuery()->where($condition);
+
+            $model = $this->getOne($query, static::class);
 
             $oldData = isset($objects[static::class]) && is_array($objects[static::class]) ? $objects[static::class] : [];
             $objects[static::class] = array_merge($oldData,  [
-                $key => $ret
+                $key => $model
             ]);
         }
 
@@ -175,7 +220,7 @@ abstract class Model extends BaseArrayObject
      * @param $keyMap
      * @return static
      */
-    protected function hasOne($class, $keyMap)
+    protected function hasOne($class, array $keyMap)
     {
         $where = [];
         foreach ($keyMap as $key => $value) {
@@ -190,70 +235,41 @@ abstract class Model extends BaseArrayObject
      * @return static
      * @throws EtsException
      */
-    protected static function findOne($condition)
+    public function findOne($condition)
     {
         if (! is_array($condition)) {
             throw new EtsException('查询条件必须是数组！');
         }
 
-        return self::_getOne($condition);
+        return self::getOneByCondition($condition);
     }
 
-    public static function findAll($condition)
+    public function findAll($condition)
     {
-        $rows = static::find()->where($condition)->asArray()->all();
-        $ret = [];
-        foreach ($rows as $row) {
-            $ret[] = new static($row);
-        }
+        $query = $this->createQuery()->where($condition);
 
-        return $ret;
+        return $this->getAll($query, static::class);
     }
 
     /**
      * @param $attributes
+     * @param $id
      * @return static
      */
-    public static function create($attributes)
+    public function create(array $attributes, string $id = 'id')
     {
-        if (static::$createdAt && ! array_key_exists(static::$createdAt, $attributes)) {
-            $attributes[static::$createdAt] = date('Y-m-d H:i:s');
-        }
-        if (static::$updatedAt && ! array_key_exists(static::$updatedAt, $attributes)) {
-            $attributes[static::$updatedAt] = date('Y-m-d H:i:s');
-        }
+        $attributes = array_merge($this->getCreateTimeValue(), $attributes);
 
-        $sql = QueryBuilder::buildInsert(static::tableName(), $attributes);
+        $sql = $this->createQuery()->buildInsertSql($attributes);
 
-        $command = static::createCommand();
-        $ret = $command->setSql($sql)->execute();
-        $attributes['id'] = $command->getLastInsertId();;
+        $this->getCommand()->execute($this->getDb(), $sql);
+
+        $attributes[$id] = $this->getCommand()->getLastInsertId($this->getDb());;
 
         return new static($attributes);
     }
 
-    protected static function _modify($attributes, $where, $obj)
-    {
-        $ret = static::updateAll($attributes, $where);
-        if ($ret) {
-            self::setObjAttributes($obj, $attributes);
-        }
-
-        return $obj;
-    }
-
-    protected static function setObjAttributes($obj, $config)
-    {
-        foreach ($config as $field => $value) {
-            $obj->$field = $value;
-        }
-    }
-
-    /**
-     * @param $attributes
-     * @return static
-     */
-    protected function modify($attributes)
+    protected function getModifyCondition(): array
     {
         $primaryKey = static::getPrimaryKey();
         $where = [];
@@ -265,44 +281,52 @@ abstract class Model extends BaseArrayObject
             $where = [$primaryKey => $this->{$primaryKey}];
         }
 
-        return self::_modify($attributes, $where, $this);
+        return $where;
     }
 
-    protected static function updateAll($attributes, $condition)
+    /**
+     * @param $attributes
+     * @return static
+     */
+    public function modify(array $attributes)
     {
-        static::checkPrimaryKey($condition);
+        $where = $this->getModifyCondition();
 
-        if (static::$updatedAt && ! isset($attributes[static::$updatedAt])) {
-            $attributes[static::$updatedAt] = date('Y-m-d H:i:s');
+        $ret = static::updateAll($attributes, $where);
+        if ($ret) {
+            $this->setAttributeByConfig($attributes);
         }
 
-        $sql = QueryBuilder::buildUpdate(static::tableName(), $attributes, $condition);
-
-        return static::createCommand()->setSql($sql)->execute();
+        return $this;
     }
 
-    protected static function deleteAll($condition)
+    public function updateAll(array $attributes, $condition)
     {
-        static::checkPrimaryKey($condition);
+        $attributes = array_merge($this->getUpdateTimeValue(), $attributes);
 
-        $sql = QueryBuilder::buildDelete(static::tableName(), $condition);
+        $sql = $this->createQuery()->buildUpdateSql($attributes, $condition);
 
-        return static::createCommand()->setSql($sql)->execute();
+        return $this->getCommand()->execute($this->getDb(), $sql);
     }
 
-    protected static function updateAllCounters($counters, $condition)
+    public function deleteAll($condition)
     {
-        static::checkPrimaryKey($condition);
+        $sql = $this->createQuery()->buildDeleteSql($condition);
 
-        $sql = QueryBuilder::buildCounters(static::tableName(), $counters, $condition, static::$updatedAt);
-
-        return static::createCommand()->setSql($sql)->execute();
+        return $this->getCommand()->execute($this->getDb(), $sql);
     }
 
-    public static function batchInsert($fields, $data)
+    public function updateAllCounters(array $counters, $condition)
     {
-        $sql = QueryBuilder::buildBatchInsert(static::tableName(), $fields, $data);
+        $sql = $this->createQuery()->buildCounterSql($counters, $condition, $this->getUpdateTimeValue());
 
-        return static::createCommand()->setSql($sql)->execute();
+        return $this->getCommand()->execute($this->getDb(), $sql);
+    }
+
+    public function batchInsert(array $fields, array $data)
+    {
+        $sql = $this->createQuery()->buildBatchInsertSql($fields, $data, $this->getCreateTimeValue());
+
+        return $this->getCommand()->execute($this->getDb(), $sql);
     }
 }

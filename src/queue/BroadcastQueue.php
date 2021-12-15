@@ -3,6 +3,8 @@
 namespace Ets\queue;
 
 
+use Ets\helper\ToolsHelper;
+
 class BroadcastQueue extends Queue
 {
 
@@ -10,11 +12,22 @@ class BroadcastQueue extends Queue
      * 广播
      *
      * @param BaseJob $job
-     * @param $routeKeys
+     * @param $routingKey
      */
-    public function broadcast(BaseJob $job, $routeKeys)
+    public function broadcast(BaseJob $job, $routingKey)
     {
-        // todo
+        try {
+            $job->setClassName();
+
+            // 转换为json格式存储数据
+            $message = ToolsHelper::toJson($job);
+
+            $this->getDriver()->broadcast($this, $message, $routingKey);
+
+        } catch (\Throwable $e) {
+            // 推送失败，重试 todo
+        }
+
     }
 
 

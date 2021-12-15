@@ -3,6 +3,7 @@
 namespace Ets\event;
 
 
+use Ets\base\BaseObject;
 use Ets\base\Component;
 
 abstract class BaseEvent extends Component
@@ -29,7 +30,12 @@ abstract class BaseEvent extends Component
     public function getPayload()
     {
         if (! is_array($this->payload)) {
-            // todo 转换为数组格式
+
+            if (is_object($this->payload) && $this->payload instanceof BaseObject) {
+
+                return $this->payload->toArray();
+            }
+
             return (array) $this->payload;
         }
 

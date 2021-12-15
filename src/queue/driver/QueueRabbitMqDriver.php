@@ -3,14 +3,15 @@
 namespace Ets\queue\driver;
 
 use Ets\Ets;
-use Ets\pool\wrapper\RabbitMqWrapper;
+use Ets\pool\connector\RabbitMqConnector;
+use Ets\queue\BroadcastQueue;
 use Ets\queue\Queue;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class QueueRabbitMqDriver extends QueueBaseDriver
 {
 
-    protected $rabbitMqComponent = RabbitMqWrapper::class;
+    protected $rabbitMqComponent = RabbitMqConnector::class;
 
     protected $exchangeName;
 
@@ -44,6 +45,21 @@ class QueueRabbitMqDriver extends QueueBaseDriver
         $msg = new AMQPMessage($message, []);
 
         $this->getChannel()->basic_publish($msg, $this->exchangeName, $queue->getComponentName());
+    }
+
+    /**
+     * 广播模式, rabbitMq的广播模式需要设置exchange的type=fanout
+     *
+     * @Override
+     * @param BroadcastQueue $queue
+     * @param string $message
+     * @param $routingKey
+     */
+    public function broadcast(BroadcastQueue $queue, string $message, $routingKey)
+    {
+        $msg = new AMQPMessage($message, []);
+
+        $this->getChannel()->basic_publish($msg, $this->exchangeName, $routingKey);
     }
 
     /**

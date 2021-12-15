@@ -2,7 +2,7 @@
 namespace Ets\pool;
 
 use Ets\base\EtsException;
-use Ets\pool\wrapper\BasePoolWrapper;
+use Ets\pool\connector\BasePoolConnector;
 use Swoole\Coroutine;
 
 
@@ -36,7 +36,7 @@ class Pool extends BasePool
 
     /**
      * 获取连接
-     * @return BasePoolWrapper
+     * @return BasePoolConnector
      * @throws \Exception
      */
     public function getConnection()

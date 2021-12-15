@@ -8,11 +8,11 @@ use Ets\queue\BaseJob;
 
 class EmailAlarmJob extends BaseJob
 {
-    protected $title;
+    public $title;
 
-    protected $content;
+    public $content;
 
-    protected $alarmComponent = EmailAlarm::class;
+    public $alarmComponent = EmailAlarm::class;
 
     /**
      * @return EmailAlarm

@@ -1,10 +1,10 @@
 <?php
-namespace Ets\pool\wrapper;
+namespace Ets\pool\connector;
 use Ets\base\EtsException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
-class RabbitMqWrapper extends BasePoolWrapper
+class RabbitMqConnector extends BasePoolConnector
 {
 
     protected $host;

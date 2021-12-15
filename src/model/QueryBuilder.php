@@ -12,11 +12,9 @@ class QueryBuilder extends BaseObject
      */
     public static function buildQuery($query)
     {
-        $query->modelClass::checkPrimaryKey($query->where);
-
         $where = static::buildCondition($query->where);
 
-        $sql = 'SELECT ' . $query->select . ' FROM `' . $query->modelClass::tableName() . "`"
+        $sql = 'SELECT ' . $query->select . ' FROM `' . $query->tableName . "`"
             . ($where ? " WHERE $where" : '')
             . ($query->groupBy ? " GROUP BY " . $query->groupBy : '')
             . ($query->having ? " HAVING " . $query->having : '')
@@ -87,7 +85,7 @@ class QueryBuilder extends BaseObject
         }
     }
 
-    public static function buildInsert($tableName, $attributes)
+    public static function buildInsert(string $tableName, array $attributes)
     {
         self::addslashes($attributes);
 
@@ -109,7 +107,7 @@ class QueryBuilder extends BaseObject
         return $sql;
     }
 
-    public static function buildBatchInsert($tableName, $fields, $data)
+    public static function buildBatchInsert(string $tableName,array $fields, array $data, array $createTimeValue)
     {
 
         if (empty($fields)) {
@@ -123,7 +121,7 @@ class QueryBuilder extends BaseObject
         self::addSlashesBatch($data);
         $values = [];
         foreach ($data as $line) {
-            $value = [];
+            $value = $createTimeValue;
             foreach ($fields as $field) {
                 if (isset($line[$field])) {
                     $value[$field] = "'" . $line[$field] . "'";
@@ -142,7 +140,7 @@ class QueryBuilder extends BaseObject
         return $sql;
     }
 
-    public static function buildUpdate($tableName, $attributes, $condition)
+    public static function buildUpdate(string $tableName, array $attributes, $condition)
     {
         self::addslashes($attributes);
 
@@ -167,15 +165,21 @@ class QueryBuilder extends BaseObject
         return $sql;
     }
 
-    public static function buildCounters($tableName, $counters, $condition, $updatedAt = null)
+    public static function buildCounters(string $tableName, array $counters, $condition, array $updateTimeValue)
     {
         $attr = [];
         foreach ( $counters as $k => $v) {
             $attr[] = "`$k` = `$k` + $v";
         }
 
-        if ($updatedAt) {
-            $attr[] = "`{$updatedAt}` =  '" . date('Y-m-d H:i:s') . "'";
+        if (! empty($updateTimeValue)) {
+            foreach ($updateTimeValue as $timeField => $value) {
+                if (is_int($value)) {
+                    $attr[] = "`{$timeField}` =  " . $value;
+                } else {
+                    $attr[] = "`{$timeField}` =  '" . $value . "'";
+                }
+            }
         }
 
         $where = static::buildCondition($condition);

@@ -3,7 +3,7 @@ namespace Ets\base;
 
 use Ets\Ets;
 use Ets\log\Logger;
-use Ets\pool\wrapper\BasePoolWrapper;
+use Ets\pool\connector\BasePoolConnector;
 use Ets\server\BaseServer;
 use Swoole\Runtime;
 
@@ -92,9 +92,9 @@ class Application extends BaseObject
             $this->_components[$name] = $this->loadComponentInstance($name);
         }
 
-        if ($this->_components[$name] instanceof BasePoolWrapper) {
+        if ($this->_components[$name] instanceof BasePoolConnector) {
             /**
-             * @var $wrapper BasePoolWrapper
+             * @var $wrapper BasePoolConnector
              */
             $wrapper = $this->_components[$name];
 
@@ -151,7 +151,7 @@ class Application extends BaseObject
 
         $instance->setComponentName($name);
 
-        if ($instance instanceof BasePoolWrapper) {
+        if ($instance instanceof BasePoolConnector) {
             // 连接池实体类, 设置连接池对象
             $instance->initPool();
         }

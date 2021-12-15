@@ -1,134 +1,77 @@
 <?php
 namespace Ets\model;
 
-use Ets\base\BaseArrayObject;
 use Ets\base\BaseObject;
 use Ets\base\EtsException;
 
 class Query extends BaseObject
 {
-
-    /**
-     * @var Command
-     */
-    protected $command;
-
-    /**
-     * @var Model
-     */
-    public $modelClass;
-
     public $tableName;
 
-    public $select = '*';
+    protected $select = '*';
 
-    public $from;
+    protected $from;
 
-    public $groupBy;
+    protected $groupBy;
 
-    public $having;
+    protected $having;
 
-    public $offset = 0;
+    protected $offset = 0;
 
-    public $limit;
+    protected $limit;
 
-    public $where;
+    protected $where;
 
-    public $orderBy;
+    protected $orderBy;
 
-    public $asArray = false;
+    protected $rawSql;
 
-    public $asModel;
-
-    /**
-     * @return $this
-     */
-    public function asArray()
+    public function buildQuerySql()
     {
-        $this->asArray = true;
+        $this->rawSql = QueryBuilder::buildQuery($this);
 
-        return $this;
+        return $this->rawSql;
     }
 
-    /**
-     * @param $modelClass string 模型类名
-     * @return $this
-     */
-    public function asModel($modelClass)
+    public function buildInsertSql(array $attributes)
     {
-        $this->asModel = $modelClass;
+        $this->rawSql = QueryBuilder::buildInsert($this->tableName, $attributes);
 
-        return $this;
+        return $this->rawSql;
+    }
+
+    public function buildUpdateSql(array $attributes, $condition)
+    {
+        $this->rawSql = QueryBuilder::buildUpdate($this->tableName, $attributes, $condition);
+
+        return $this->rawSql;
+    }
+
+    public function buildDeleteSql($condition)
+    {
+        $this->rawSql = QueryBuilder::buildDelete($this->tableName, $condition);
+
+        return $this->rawSql;
+    }
+
+    public function buildCounterSql(array $counters, $condition, array $updateTimeValue)
+    {
+        $this->rawSql = QueryBuilder::buildCounters($this->tableName, $counters, $condition, $updateTimeValue);
+
+        return $this->rawSql;
+    }
+
+    public function buildBatchInsertSql(array $fields, array $data, array $createTimeValue)
+    {
+        $this->rawSql = QueryBuilder::buildBatchInsert($this->tableName, $fields, $data, $createTimeValue);
+
+        return $this->rawSql;
     }
 
 
-    /**
-     * 查询单条记录
-     *
-     * @return mixed
-     */
-    public function one()
+    public function getRawSql()
     {
-        $this->limit(1);
-
-        $sql = QueryBuilder::buildQuery($this);
-
-        $ret = $this->command->setSql($sql)->queryOne();
-
-        if ($this->asArray) {
-            return $ret;
-        }
-
-        if (empty($ret)) {
-            return null;
-        }
-
-        if ($this->asModel) {
-            $class = $this->asModel;
-            return new $class($ret);
-        }
-
-        return new BaseArrayObject($ret);
-    }
-
-    /**
-     * 查询多条记录
-     *
-     * @return mixed
-     */
-    public function all()
-    {
-        $sql = QueryBuilder::buildQuery($this);
-
-        $ret = $this->command->setSql($sql)->queryAll();
-
-        if ($this->asArray) {
-            return $ret;
-        }
-
-        $objs = [];
-        $class = $this->asModel ?: 'Ets\\base\\BaseArrayObject';
-        foreach ($ret as $row) {
-            $objs[] = new $class($row);
-        }
-
-        return $objs;
-    }
-
-    public function count()
-    {        
-        $this->select('count('. $this->select . ') as c');
-        $ret = $this->asArray()->one();
-
-        return $ret['c'];
-    }
-
-    public function sum($select)
-    {
-        $this->select('sum('. $select . ') as s');
-        $ret = $this->asArray()->one();
-
-        return $ret['s'];
+        return $this->rawSql;
     }
 
     /**
@@ -329,9 +272,5 @@ class Query extends BaseObject
         return $this;
     }
 
-    public function getRawSql()
-    {
-        return QueryBuilder::buildQuery($this);
-    }
 
 }

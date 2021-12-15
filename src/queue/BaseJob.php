@@ -2,9 +2,9 @@
 
 namespace Ets\queue;
 
-use Ets\base\Component;
+use Ets\base\BaseArrayObject;
 
-abstract class BaseJob extends Component
+abstract class BaseJob extends BaseArrayObject
 {
     // 是否记录队列执行日志
     protected $isLog = true;
@@ -26,17 +26,6 @@ abstract class BaseJob extends Component
     public function setClassName()
     {
         $this->className = get_class($this);
-    }
-
-    /**
-     * @Override
-     * @param $config
-     */
-    public function setAttributeByConfig($config)
-    {
-        foreach ($config as $field => $value) {
-            $this->$field = $value;
-        }
     }
 
     public abstract function execute();

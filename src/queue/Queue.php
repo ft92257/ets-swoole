@@ -53,7 +53,7 @@ class Queue extends Component
 
             $this->getDriver()->push($this, $message, $delay);
 
-            EventHelper::trigger(QueuePushEvent::build($job));
+            EventHelper::localTrigger(QueuePushEvent::build($job));
 
         } catch (\Throwable $e) {
             // 推送失败，重试 todo

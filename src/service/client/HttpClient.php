@@ -45,7 +45,11 @@ class HttpClient extends BaseObject
      */
     protected $files = [];
 
-    protected $logRate = 100;
+    // 日志记录几率百分比
+    protected $logPercent = 100;
+
+    // 日志分类
+    protected $logCategory = 'httpClient';
 
     protected $checkStatusCode = true;
 
@@ -76,7 +80,7 @@ class HttpClient extends BaseObject
     {
         return [
             'host', 'path', 'params', 'headers', 'timeout',
-            'cert', 'files', 'logRate', 'checkResult', 'checkStatusCode',
+            'cert', 'files', 'logPercent', 'logCategory', 'checkResult', 'checkStatusCode',
             'paramsToXml', 'paramsToJson', 'xmlRootTag'
         ];
     }
@@ -106,7 +110,7 @@ class HttpClient extends BaseObject
         $this->headers[$key] = $value;
     }
 
-    protected function parseUrl($pathWithQuery = true)
+    protected function parseUrl()
     {
         $urlInfo = parse_url($this->getUrl());
 
@@ -160,29 +164,46 @@ class HttpClient extends BaseObject
             ]);
         }
 
-        // todo
-        Ets::info([
-            'url' => $this->getUrl(),
-            'params' => $this->params,
-            'headers' => $this->headers
-        ], 'curl');
+        $isLog = ToolsHelper::checkPercent($this->logPercent);
+        $reqSn = uniqid('post');
+        if ($isLog) {
+            Ets::info([
+                'reqSn' => $reqSn,
+                'url' => $this->getUrl(),
+                'params' => $this->params,
+                'headers' => $this->headers
+            ], $this->logCategory);
+        }
 
-        $cli->post($urlInfo['path'], $this->params);
+        try {
+            $cli->post($urlInfo['path'], $this->params);
 
-        $this->result = $cli->body;
+            $this->result = $cli->body;
 
-        $this->errorMsg = $cli->errCode ? socket_strerror($cli->errCode) : '';
+            $this->errorMsg = $cli->errCode ? socket_strerror($cli->errCode) : '';
 
-        $this->statusCode = $cli->statusCode;
+            $this->statusCode = $cli->statusCode;
 
-        $cli->close();
+            $cli->close();
+
+        } catch (\Throwable $e) {
+
+            $this->logError($isLog, $reqSn, $e);
+        }
 
         if ($this->checkStatusCode) {
-            $this->checkStatusCode();
+            $this->checkStatusCode($isLog, $reqSn);
         }
 
         if ($this->checkResult) {
-            $this->checkResult();
+            $this->checkResult($isLog, $reqSn);
+        }
+
+        if ($isLog) {
+            Ets::info([
+                'reqSn' => $reqSn,
+                'result' => $this->result,
+            ], $this->logCategory);
         }
 
         return $this->result;
@@ -210,18 +231,41 @@ class HttpClient extends BaseObject
         return $this->post();
     }
 
-    protected function checkResult()
+    protected function logError($isLog, $reqSn, \Throwable $e)
+    {
+        if (! $isLog) {
+            return;
+        }
+
+        Ets::error([
+            'reqSn' => $reqSn,
+            'result' => $this->result,
+            'statusCode' => $this->statusCode,
+            'error' => $e->getMessage() . '#' . $e->getTraceAsString(),
+        ], $this->logCategory);
+    }
+
+    protected function checkResult($isLog, $reqSn)
     {
         if (! $this->result && $this->errorMsg) {
 
-            throw new EtsException('HttpClient return error: ' . $this->errorMsg);
+            $e = new EtsException('HttpClient return error: ' . $this->errorMsg);
+
+            $this->logError($isLog, $reqSn, $e);
+
+            throw $e;
         }
     }
 
-    protected function checkStatusCode()
+    protected function checkStatusCode($isLog, $reqSn)
     {
         if (intval($this->statusCode) != 200) {
-            throw new EtsException('HttpClient return code error: ' . $this->statusCode);
+
+            $e = new EtsException('HttpClient return code error: ' . $this->statusCode);
+
+            $this->logError($isLog, $reqSn, $e);
+
+            throw $e;
         }
     }
 
@@ -235,6 +279,17 @@ class HttpClient extends BaseObject
         }
 
         $cli->set([ 'timeout' => $this->timeout ]);
+
+        $isLog = ToolsHelper::checkPercent($this->logPercent);
+        $reqSn = uniqid('get');
+        if ($isLog) {
+            Ets::info([
+                'reqSn' => $reqSn,
+                'url' => $this->getUrl(),
+                'headers' => $this->headers
+            ], $this->logCategory);
+        }
+
         $cli->get($urlInfo['path']);
 
         $this->result = $cli->body;
@@ -244,11 +299,18 @@ class HttpClient extends BaseObject
         $cli->close();
 
         if ($this->checkStatusCode) {
-            $this->checkStatusCode();
+            $this->checkStatusCode($isLog, $reqSn);
         }
 
         if ($this->checkResult) {
-            $this->checkResult();
+            $this->checkResult($isLog, $reqSn);
+        }
+
+        if ($isLog) {
+            Ets::info([
+                'reqSn' => $reqSn,
+                'result' => $this->result,
+            ], $this->logCategory);
         }
 
         return $this->result;

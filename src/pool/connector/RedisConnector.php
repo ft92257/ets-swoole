@@ -1,9 +1,9 @@
 <?php
-namespace Ets\pool\wrapper;
+namespace Ets\pool\connector;
 use Ets\base\EtsException;
 use Swoole\Coroutine\Redis;
 
-class RedisWrapper extends BasePoolWrapper
+class RedisConnector extends BasePoolConnector
 {
 
     protected $host;

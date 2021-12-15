@@ -51,4 +51,16 @@ class ToolsHelper
         return $xml;
     }
 
+    /**
+     * 百分比几率计算
+     *
+     * @param int $percent 百分比， 0 -> 100
+     * @return bool
+     */
+    public static function checkPercent(int $percent)
+    {
+        return mt_rand(1, 100) <= $percent;
+    }
+
+
 }

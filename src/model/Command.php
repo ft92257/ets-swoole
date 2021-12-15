@@ -2,114 +2,69 @@
 namespace Ets\model;
 
 use Ets\base\BaseObject;
-use Ets\consts\LogCategoryConst;
-use Ets\Ets;
 use Ets\base\EtsException;
-use Ets\pool\wrapper\MysqlWrapper;
 
-class Command extends BaseObject
+class Command extends BaseObject implements CommandInterface
 {
-    protected $_sql;
-
-    // 数据库连接
-    /**
-     * @var $db MysqlWrapper
-     */
-    protected $db;
-
-    public $modelClass;
-
-    public function getSql()
+    public function execute($db, $sql): int
     {
-        return $this->_sql;
+        $this->query($db, $sql);
+
+        return $db->affected_rows ?: 1;
     }
 
-    public function setSql($sql)
+    protected function query($db, $sql)
     {
-        $this->_sql = $sql;
-
-        return $this;
-    }
-
-    public function execute()
-    {
-        $this->query();
-
-        return $this->db->affected_rows ?: 1;
-    }
-
-    protected function query()
-    {
-        $ret = $this->db->query($this->getSql());
+        $ret = $db->query($sql);
 
         if ($ret === false) {
-            $error = "数据库执行错误#{$this->db->errno}: {$this->db->error}";
+            $error = "数据库执行错误#{$db->errno}: {$db->error}";
             throw new EtsException($error);
         }
 
         return $ret;
     }
 
-    public function queryOne()
+    public function queryOne($db, $sql): array
     {
-        $res = $this->query();
+        $res = $this->query($db, $sql);
         
         if($res === false) {    
-            $this->errorLog();
             throw new EtsException('查询失败！');
         }
 
         return $res[0] ?? [];
     }
 
-    public function queryOneBySql($sql)
+    public function queryAll($db, $sql): array
     {
-        $res = $this->db->query($sql);
-
-        if($res === false) {
-            $this->errorLog();
-            throw new EtsException('查询失败！');
-        }
-
-        return $res[0] ?? [];
-    }
-
-
-    public function queryAll()
-    {
-        $res = $this->query();
+        $res = $this->query($db, $sql);
         
         if($res === false) {    
-            $this->errorLog();
             throw new EtsException('查询失败！');
         }
 
         return $res;
     }
 
-    public function getLastInsertId()
+    public function getLastInsertId($db): int
     {
-        return $this->db->insert_id;
+        return $db->insert_id;
     }
 
-    protected function errorLog()
+    public function begin($db)
     {
-        Ets::error("数据库错误：" . $this->_sql . '#' . $this->db->error . '#' . $this->db->errno, LogCategoryConst::ERROR_SQL) ;
+        return $db->begin();
     }
 
-    public function begin()
+    public function commit($db)
     {
-        return $this->db->begin();
+        return $db->commit();
     }
 
-    public function commit()
+    public function rollback($db)
     {
-        return $this->db->commit();
-    }
-
-    public function rollback()
-    {
-        return $this->db->rollback();
+        return $db->rollback();
     }
 
 }

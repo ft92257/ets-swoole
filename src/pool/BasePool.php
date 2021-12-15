@@ -3,7 +3,7 @@ namespace Ets\pool;
 
 use Ets\base\Component;
 use Ets\Ets;
-use Ets\pool\wrapper\BasePoolWrapper;
+use Ets\pool\connector\BasePoolConnector;
 
 abstract class BasePool extends Component
 {
@@ -11,12 +11,12 @@ abstract class BasePool extends Component
     protected $_wrapperName;
 
     /**
-     * @var BasePoolWrapper[]
+     * @var BasePoolConnector[]
      */
     protected $connections = [];
 
     /**
-     * @return BasePoolWrapper
+     * @return BasePoolConnector
      */
     public abstract function getConnection();
 
@@ -28,12 +28,12 @@ abstract class BasePool extends Component
     /**
      * 连接或重新连接
      *
-     * @return BasePoolWrapper
+     * @return BasePoolConnector
      */
     protected function getConnectionWrapper()
     {
         /**
-         * @var $wrapper BasePoolWrapper
+         * @var $wrapper BasePoolConnector
          */
         $wrapper = Ets::component($this->_wrapperName);
 

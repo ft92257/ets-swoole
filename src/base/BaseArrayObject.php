@@ -22,4 +22,5 @@ class BaseArrayObject extends BaseObject implements \ArrayAccess
     {
         unset($this->$offset);
     }
+
 }

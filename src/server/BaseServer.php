@@ -8,7 +8,7 @@ use Ets\base\EtsException;
 use Ets\consts\EtsConst;
 use Ets\Ets;
 use Ets\coroutine\CoroutineVar;
-use Ets\pool\wrapper\BasePoolWrapper;
+use Ets\pool\connector\BasePoolConnector;
 use Ets\server\base\RequestInterface;
 use Ets\server\base\ResponseInterface;
 use Ets\server\errorHandle\ErrorHandlerInterface;
@@ -131,7 +131,7 @@ abstract class BaseServer extends Component
             // 释放连接池
             $wrappers = CoroutineVar::getArrayList(EtsConst::COROUTINE_POOL_WRAPPERS);
             /**
-             * @var $wrapper BasePoolWrapper
+             * @var $wrapper BasePoolConnector
              */
             foreach ($wrappers->getValues() as $wrapper) {
 

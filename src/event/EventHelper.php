@@ -12,10 +12,12 @@ class EventHelper
 {
 
     /**
+     * 触发本地事件
+     *
      * @param BaseEvent $event
      * @throws EtsException
      */
-    public static function trigger($event)
+    public static function localTrigger($event)
     {
         if (! ($event instanceof BaseEvent)) {
             throw new EtsException("event参数需继承BaseEvent类");
@@ -51,17 +53,19 @@ class EventHelper
     }
 
     /**
+     * 跨服务发送事件
+     *
      * @param BaseEvent $event
-     * @param string $microServerRouteKeys
+     * @param string $routingKey mq的routing key，默认全部广播模式
      */
-    public static function microServerTrigger($event, $microServerRouteKeys = '')
+    public static function broadcastTrigger($event, $routingKey = '')
     {
         $job = new EventJob([
             'name' => $event->getName(),
             'payloadString' => ToolsHelper::toJson($event->getPayload()),
         ]);
 
-        self::getQueueEvent()->broadcast($job, $microServerRouteKeys);
+        self::getQueueEvent()->broadcast($job, $routingKey);
     }
 
     /**

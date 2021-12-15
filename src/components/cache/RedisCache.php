@@ -4,11 +4,11 @@ namespace Ets\components\cache;
 use Ets\base\Component;
 use Ets\consts\LogCategoryConst;
 use Ets\Ets;
-use Ets\pool\wrapper\RedisWrapper;
+use Ets\pool\connector\RedisConnector;
 
 class RedisCache extends Component implements CacheInterface
 {
-    protected $redisComponent = RedisWrapper::class;
+    protected $redisComponent = RedisConnector::class;
 
     protected $keyPrefix = '';
 
@@ -22,7 +22,7 @@ class RedisCache extends Component implements CacheInterface
     }
 
     /**
-     * @return RedisWrapper
+     * @return RedisConnector
      */
     protected function getRedis()
     {

@@ -4,6 +4,7 @@ namespace Ets\log;
 
 use Ets\base\Component;
 use Ets\Ets;
+use Ets\helper\ToolsHelper;
 
 class Logger extends Component
 {
@@ -31,13 +32,16 @@ class Logger extends Component
 
     protected $isOpen = true;
 
+    // 最大字符长度
+    protected $maxLength = 2000;
+
     /**
      * @Override
      * @return array
      */
     protected function allowInitFields()
     {
-        return ['targets', 'isOpen'];
+        return ['targets', 'isOpen', 'maxLength'];
     }
 
     public function init()
@@ -63,12 +67,20 @@ class Logger extends Component
         $this->targetConfig = $targetConfig;
     }
 
-    public function log($text, $level, $category)
+    public function log($message, $level, $category)
     {
         if (! $this->isOpen) {
             // 不记录日志
             return;
         }
+
+        if (! is_string($message)) {
+            $text = ToolsHelper::toJson($message);
+        } else {
+            $text = $message;
+        }
+
+        $text = substr($text, 0, $this->maxLength);
 
         $this->messages[] = [
             'level' => $level,

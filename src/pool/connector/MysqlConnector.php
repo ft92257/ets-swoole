@@ -1,9 +1,9 @@
 <?php
-namespace Ets\pool\wrapper;
+namespace Ets\pool\connector;
 use Ets\base\EtsException;
 use Swoole\Coroutine\MySQL;
 
-class MysqlWrapper extends BasePoolWrapper
+class MysqlConnector extends BasePoolConnector
 {
 
     protected $host;

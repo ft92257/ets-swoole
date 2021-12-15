@@ -21,6 +21,9 @@ $config = [
         'queueEvent' => [
             'class' => \Ets\queue\BroadcastQueue::class,
         ],
+        'command' => [
+            'class' => \Ets\model\Command::class
+        ],
     ],
 
     'params' => [],

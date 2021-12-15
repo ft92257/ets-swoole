@@ -1,5 +1,5 @@
 <?php
-namespace Ets\pool\wrapper;
+namespace Ets\pool\connector;
 
 use Ets\base\Component;
 use Ets\base\EtsException;
@@ -9,7 +9,7 @@ use Ets\coroutine\CoroutineVar;
 use Ets\pool\Pool;
 use Ets\pool\SinglePool;
 
-abstract class BasePoolWrapper extends Component
+abstract class BasePoolConnector extends Component
 {
     /**
      * 连接池配置
@@ -18,6 +18,9 @@ abstract class BasePoolWrapper extends Component
     protected $poolConfig = [
         'class' => Pool::class,
     ];
+
+    // 锁时间，毫秒
+    protected $lockTime = 5;
 
     // 装饰对象实例
     /**
@@ -39,6 +42,11 @@ abstract class BasePoolWrapper extends Component
     public function setPoolConfig($poolConfig)
     {
         $this->poolConfig = $poolConfig;
+    }
+
+    public function setLockTime($lockTime)
+    {
+        $this->lockTime = $lockTime;
     }
 
     /**
@@ -85,7 +93,7 @@ abstract class BasePoolWrapper extends Component
     {
         $cid = CoroutineVar::getCid();
 
-        $this->expire = microtime(true) * 1000 + 5;
+        $this->expire = microtime(true) * 1000 + $this->lockTime;
 
         $this->cid = $cid;
 
