@@ -3,10 +3,16 @@
 namespace Ets\queue;
 
 
-use Ets\helper\ToolsHelper;
+use Ets\queue\driver\QueueBaseDriver;
+use Ets\queue\driver\QueueRabbitMqDriver;
 
 class BroadcastQueue extends Queue
 {
+
+    /**
+     * @var $driver QueueBaseDriver
+     */
+    protected $driverComponent = QueueRabbitMqDriver::class;
 
     /**
      * 广播
@@ -19,7 +25,7 @@ class BroadcastQueue extends Queue
     public function broadcast(BaseJob $job, string $routingKey, int $hasRetryCount = 0)
     {
         try {
-            $job->setClassName();
+            $job->prepare();
 
             // 转换为json格式存储数据
             $message = Message::build($job->toArray(), 0);

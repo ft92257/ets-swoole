@@ -6,6 +6,7 @@ use Ets\base\Component;
 use Ets\Ets;
 use Ets\event\EventHelper;
 use Ets\event\QueueErrorEvent;
+use Ets\event\QueueFinishEvent;
 use Ets\event\QueuePushEvent;
 use Ets\helper\ToolsHelper;
 use Ets\queue\driver\QueueBaseDriver;
@@ -50,7 +51,7 @@ class Queue extends Component
     public function push(BaseJob $job, int $delay = 0, int $hasRetryCount = 0)
     {
         try {
-            $job->setClassName();
+            $job->prepare();
 
             // 转换为json格式存储数据
             $message = Message::build($job->toArray(), 0);
@@ -134,10 +135,18 @@ class Queue extends Component
     protected function executeJob(BaseJob $job, int $hasRetryCount)
     {
         try {
+            if ($job->isExpired()) {
+                return;
+            }
+
             $job->execute();
 
             // 执行成功
             $this->getDriver()->success($this);
+
+            EventHelper::localTrigger(new QueueFinishEvent([
+                'job' => $job,
+            ]));
 
         } catch (\Throwable $e) {
             // 执行失败，待重试

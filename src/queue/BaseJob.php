@@ -6,6 +6,8 @@ use Ets\base\BaseArrayObject;
 
 abstract class BaseJob extends BaseArrayObject
 {
+    protected $jobSn;
+
     // 是否记录队列执行日志
     protected $isLog = true;
 
@@ -20,12 +22,51 @@ abstract class BaseJob extends BaseArrayObject
 
     protected $className;
 
-    public function setClassName()
+    public abstract function execute();
+
+    /**
+     * @override
+     * @return array
+     */
+    protected function allowReadFields()
     {
-        $this->className = get_class($this);
+        return ['jobSn', 'isLog', 'jobExpireTime', 'jobExpireSeconds', 'jobRetryConfig', 'className'];
     }
 
-    public abstract function execute();
+    /**
+     * @override
+     * @return array
+     */
+    protected function allowInitFields()
+    {
+        return $this->allowReadFields();
+    }
+
+    public function prepare()
+    {
+        $this->className = get_class($this);
+        $this->jobExpireTime = time() + $this->jobExpireSeconds;
+        $this->jobSn = uniqid('job');
+    }
+
+    public function getJobSn()
+    {
+        return $this->jobSn;
+    }
+
+    /**
+     * 是否已过期
+     * @return bool
+     */
+    public function isExpired()
+    {
+        return time() >= $this->jobExpireTime;
+    }
+
+    public function isLog()
+    {
+        return $this->isLog;
+    }
 
     /**
      * 下次重试间隔时间，返回0不重试
