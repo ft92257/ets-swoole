@@ -1,6 +1,7 @@
 <?php
 namespace Ets\model;
 
+use Ets\base\BaseArrayObject;
 use Ets\base\BaseObject;
 use Ets\base\EtsException;
 
@@ -25,6 +26,8 @@ class Query extends BaseObject
     protected $orderBy;
 
     protected $rawSql;
+
+    protected $resultClass = BaseArrayObject::class;
 
     public function buildQuerySql()
     {
@@ -272,5 +275,40 @@ class Query extends BaseObject
         return $this;
     }
 
+    public function resultClass(string $resultClass)
+    {
+        $this->resultClass = $resultClass;
+    }
+
+    public function adaptOneResult(array $row)
+    {
+        if (empty($row)) {
+            return null;
+        }
+
+        if (empty($this->resultClass)) {
+            return $row;
+        }
+
+        return new $this->resultClass($row);
+    }
+
+    public function adaptAllResult(array $rows)
+    {
+        if (empty($rows)) {
+            return null;
+        }
+
+        if (empty($this->resultClass)) {
+            return $rows;
+        }
+
+        $objects = [];
+        foreach ($rows as $row) {
+            $objects[] = new $this->resultClass($row);
+        }
+
+        return $objects;
+    }
 
 }

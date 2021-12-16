@@ -130,11 +130,10 @@ abstract class Model extends BaseArrayObject implements ModelInterface
      * 查询单条记录
      *
      * @param Query $query
-     * @param $returnClass
      *
      * @return mixed
      */
-    public function getOne(Query $query, string $returnClass = BaseArrayObject::class)
+    public function getOne(Query $query)
     {
         $db = $this->getDb(true);
 
@@ -142,18 +141,10 @@ abstract class Model extends BaseArrayObject implements ModelInterface
 
         $row = $command->queryOne($db, $query->buildQuerySql());
 
-        if (empty($returnClass)) {
-            return $row;
-        }
-
-        if (empty($row)) {
-            return null;
-        }
-
-        return new $returnClass($row);
+        return $query->adaptOneResult($row);
     }
 
-    public function getAll(Query $query, string $returnClass = BaseArrayObject::class)
+    public function getAll(Query $query)
     {
         $db = $this->getDb(true);
 
@@ -161,20 +152,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
 
         $rows = $command->queryAll($db, $query->buildQuerySql());
 
-        if (empty($returnClass)) {
-            return $rows;
-        }
-
-        if (empty($rows)) {
-            return null;
-        }
-
-        $objects = [];
-        foreach ($rows as $row) {
-            $objects[] = new $returnClass($row);
-        }
-
-        return $objects;
+        return $query->adaptAllResult($rows);
     }
 
     /**
@@ -196,23 +174,22 @@ abstract class Model extends BaseArrayObject implements ModelInterface
      */
     protected function getOneByCondition($condition)
     {
-        $objects = CoroutineVar::getArrayList(EtsConst::COROUTINE_MODEL_OBJECTS);
+        $hashMap = CoroutineVar::getHashMap(EtsConst::COROUTINE_MODEL_OBJECTS);
 
-        $key = md5(ToolsHelper::toJson($condition));
+        $key = static::class . md5(ToolsHelper::toJson($condition));
 
-        if (! isset($objects[static::class][$key])) {
+        $model = $hashMap->get($key);
 
-            $query = $this->createQuery()->where($condition);
+        if (! $model) {
 
-            $model = $this->getOne($query, static::class);
+            $query = $this->createQuery()->where($condition)->resultClass(static::class);
 
-            $oldData = isset($objects[static::class]) && is_array($objects[static::class]) ? $objects[static::class] : [];
-            $objects[static::class] = array_merge($oldData,  [
-                $key => $model
-            ]);
+            $model = $this->getOne($query);
+
+            $hashMap->put($key, $model);
         }
 
-        return $objects[static::class][$key];
+        return $model;
     }
 
     /**
@@ -246,9 +223,9 @@ abstract class Model extends BaseArrayObject implements ModelInterface
 
     public function findAll($condition)
     {
-        $query = $this->createQuery()->where($condition);
+        $query = $this->createQuery()->where($condition)->resultClass(static::class);
 
-        return $this->getAll($query, static::class);
+        return $this->getAll($query);
     }
 
     /**
