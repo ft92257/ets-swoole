@@ -193,21 +193,6 @@ abstract class Model extends BaseArrayObject implements ModelInterface
     }
 
     /**
-     * @param $class static
-     * @param $keyMap
-     * @return static
-     */
-    protected function hasOne($class, array $keyMap)
-    {
-        $where = [];
-        foreach ($keyMap as $key => $value) {
-            $where[$key] = $this->$value;
-        }
-
-        return $class::findOne($where);
-    }
-
-    /**
      * @param $condition
      * @return static
      * @throws EtsException
