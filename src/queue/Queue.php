@@ -5,10 +5,12 @@ namespace Ets\queue;
 use Ets\base\Component;
 use Ets\Ets;
 use Ets\event\EventHelper;
+use Ets\event\QueueErrorEvent;
 use Ets\event\QueuePushEvent;
 use Ets\helper\ToolsHelper;
 use Ets\queue\driver\QueueBaseDriver;
 use Ets\queue\driver\QueueRedisDriver;
+use phpseclib3\Crypt\EC\BaseCurves\Base;
 
 class Queue extends Component
 {
@@ -42,21 +44,29 @@ class Queue extends Component
     /**
      * @param BaseJob $job
      * @param $delay int 延迟x秒执行
+     * @param $hasRetryCount
+     * @throws
      */
-    public function push(BaseJob $job, int $delay = 0)
+    public function push(BaseJob $job, int $delay = 0, int $hasRetryCount = 0)
     {
         try {
             $job->setClassName();
 
             // 转换为json格式存储数据
-            $message = ToolsHelper::toJson($job);
+            $message = Message::build($job->toArray(), 0);
 
             $this->getDriver()->push($this, $message, $delay);
 
-            EventHelper::localTrigger(QueuePushEvent::build($job));
+            EventHelper::localTrigger(new QueueErrorEvent(['job' => $job]));
 
         } catch (\Throwable $e) {
-            // 推送失败，重试 todo
+            // 推送失败，重试
+            if ($hasRetryCount >= $this->pushRetryCount) {
+                throw $e;
+            }
+            $hasRetryCount++;
+
+            $this->push($job, $delay, $hasRetryCount);
         }
     }
 
@@ -78,7 +88,7 @@ class Queue extends Component
                     continue;
                 }
 
-                $this->executeJob($job);
+                $this->executeJob($job, $message->getAttempt());
 
             } catch (\Throwable $e) {
                 //
@@ -87,12 +97,16 @@ class Queue extends Component
         }
     }
 
-    protected function getJobByMessage($message)
+    /**
+     * @param Message $message
+     * @return BaseJob
+     */
+    protected function getJobByMessage(Message $message)
     {
-        $params = json_decode($message, true);
-        $jobClass = $params['className'];
+        $jobArrayData = $message->getJobArrayData();
+        $jobClass = $jobArrayData['className'];
 
-        $job = new $jobClass($params);
+        $job = new $jobClass($jobArrayData);
 
         return $job;
     }
@@ -110,20 +124,36 @@ class Queue extends Component
             return;
         }
 
-        $this->executeJob($job);
+        $this->executeJob($job, null);
     }
 
-    protected function executeJob(BaseJob $job)
+    /**
+     * @param BaseJob $job
+     * @param int $hasRetryCount 第几次重试，0不重试
+     */
+    protected function executeJob(BaseJob $job, int $hasRetryCount)
     {
         try {
             $job->execute();
 
-            // 执行成功 todo
+            // 执行成功
             $this->getDriver()->success($this);
 
         } catch (\Throwable $e) {
-            // 执行失败，待重试 todo
+            // 执行失败，待重试
+            $delay = $job->getNextRetryDelay($hasRetryCount);
+            if ($delay > 0) {
+                $hasRetryCount++;
 
+                $this->getDriver()->retry($delay, $hasRetryCount);
+            } else {
+                // 结束重试，队列消费失败
+
+                EventHelper::localTrigger(new QueueErrorEvent([
+                    'job' => $job,
+                    'exception' => $e,
+                ]));
+            }
         }
     }
 

@@ -4,7 +4,7 @@ namespace Ets\event;
 
 use Ets\queue\BaseJob;
 
-class QueuePushEvent extends BaseEvent
+class QueueErrorEvent extends BaseEvent
 {
 
     /**
@@ -12,9 +12,14 @@ class QueuePushEvent extends BaseEvent
      */
     public $job;
 
+    /**
+     * @var \Throwable
+     */
+    public $exception;
+
     public static function getName(): string
     {
-        return 'QueuePushEvent';
+        return 'QueueErrorEvent';
     }
 
 }

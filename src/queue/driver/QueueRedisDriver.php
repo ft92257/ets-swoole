@@ -4,7 +4,9 @@ namespace Ets\queue\driver;
 
 use Ets\base\EtsException;
 use Ets\Ets;
+use Ets\helper\ToolsHelper;
 use Ets\pool\connector\RedisConnector;
+use Ets\queue\Message;
 use Ets\queue\Queue;
 
 class QueueRedisDriver extends QueueBaseDriver
@@ -48,7 +50,7 @@ class QueueRedisDriver extends QueueBaseDriver
      * @param $message
      * @param $delay int 延迟执行时间
      */
-    public function push(Queue $queue, string $message, int $delay = 0)
+    public function push(Queue $queue, Message $message, int $delay = 0)
     {
         $redis = $this->getRedis();
         $index = $this->plusPushChannelIndex();
@@ -57,7 +59,10 @@ class QueueRedisDriver extends QueueBaseDriver
         $redis->multi();
 
         $id = $redis->incr("$channel.message_id");
-        $redis->hset("$channel.messages", $id, $message);
+        $redis->hset("$channel.messages", $id, ToolsHelper::toJson($message->getJobArrayData()));
+
+        $redis->hset("$channel.attempts", $id, $message->getAttempt());
+
         if (! $delay) {
             $redis->lpush("$channel.waiting", $id);
         } else {
@@ -78,6 +83,7 @@ class QueueRedisDriver extends QueueBaseDriver
     protected function delete($channel, $id)
     {
         $this->getRedis()->hdel("$channel.messages", $id);
+        $this->getRedis()->hdel("$channel.attempts", $id);
     }
 
     /**
@@ -101,8 +107,9 @@ class QueueRedisDriver extends QueueBaseDriver
         $this->currentMessageId = $id;
 
         $message = $this->getRedis()->hget("$channel.messages", $id);
+        $attempt = $this->getRedis()->hget("$channel.attempts", $id);
 
-        return $message;
+        return [$attempt, $message];
     }
 
     /**
@@ -153,15 +160,25 @@ class QueueRedisDriver extends QueueBaseDriver
     /**
      * 队列消费
      * @param $queue Queue
-     * @return String
+     * @return Message
      */
-    public function consume(Queue $queue): string
+    public function consume(Queue $queue): Message
     {
         $index = $this->plusConsumeChannelIndex();
         $channel = $this->getChannel($queue->getComponentName(), $index);
         $this->currentChannel = $channel;
 
-        return $this->reserve($channel);
+        $messages = $this->reserve($channel);
+        if (empty($messages)) {
+            return null;
+        }
+
+        $jobArrayData = json_decode($messages[1], true);
+        if (empty($jobArrayData)) {
+            return null;
+        }
+
+        return Message::build($jobArrayData, $messages[0]);
     }
 
     public function success(Queue $queue)
@@ -172,9 +189,11 @@ class QueueRedisDriver extends QueueBaseDriver
         }
     }
 
-    public function retry(int $delay)
+    public function retry(int $delay, int $hasRetryCount)
     {
         $channel = $this->currentChannel;
+
+        $this->getRedis()->hset("$channel.attempts", $this->currentMessageId, $hasRetryCount);
 
         $this->getRedis()->zadd("$channel.delayed", time() + $delay, $this->currentMessageId);
     }

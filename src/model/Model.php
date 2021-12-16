@@ -269,16 +269,29 @@ abstract class Model extends BaseArrayObject implements ModelInterface
         return new static($attributes);
     }
 
-    protected function getModifyCondition(): array
+    protected function getPrimaryCondition(): array
     {
         $primaryKey = static::getPrimaryKey();
         $where = [];
         if (is_array($primaryKey)) {
             foreach ($primaryKey as $k) {
-                $where[$k] = $this->{$k};
+                $value = $this->{$k};
+
+                if (empty($value)) {
+                    throw new EtsException("主键值不能为空：" . $k);
+                }
+
+                $where[$k] = $value;
             }
         } else {
-            $where = [$primaryKey => $this->{$primaryKey}];
+            $value = $this->{$primaryKey};
+            if (empty($value)) {
+                throw new EtsException("主键值不能为空：" . $primaryKey);
+            }
+
+            $where = [
+                $primaryKey => $value
+            ];
         }
 
         return $where;
@@ -290,7 +303,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
      */
     public function modify(array $attributes)
     {
-        $where = $this->getModifyCondition();
+        $where = $this->getPrimaryCondition();
 
         $ret = static::updateAll($attributes, $where);
         if ($ret) {

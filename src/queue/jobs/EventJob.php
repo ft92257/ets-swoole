@@ -34,6 +34,6 @@ class EventJob extends BaseJob
             return;
         }
 
-        EventHelper::localTrigger($eventClass::build($payload));
+        EventHelper::localTrigger(new $eventClass($payload));
     }
 }

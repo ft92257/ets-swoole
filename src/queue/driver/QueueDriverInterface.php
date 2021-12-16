@@ -2,6 +2,7 @@
 
 namespace Ets\queue\driver;
 
+use Ets\queue\Message;
 use Ets\queue\Queue;
 
 interface QueueDriverInterface
@@ -13,14 +14,14 @@ interface QueueDriverInterface
      * @param $message
      * @param $delay int 延迟x秒
      */
-    public function push(Queue $queue, string $message, int $delay = 0);
+    public function push(Queue $queue, Message $message, int $delay = 0);
 
     /**
      * 队列消费
      * @param $queue Queue
-     * @return String 消息内容
+     * @return Message 消息内容
      */
-    public function consume(Queue $queue): string;
+    public function consume(Queue $queue): Message;
 
     /**
      * 消费成功处理
@@ -32,8 +33,9 @@ interface QueueDriverInterface
     /**
      * 失败重试
      * @param int $delay
+     * @param int $hasRetryCount
      * @return mixed
      */
-    public function retry(int $delay);
+    public function retry(int $delay, int $hasRetryCount);
 
 }

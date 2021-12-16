@@ -62,7 +62,7 @@ class EventHelper
     {
         $job = new EventJob([
             'name' => $event->getName(),
-            'payloadString' => ToolsHelper::toJson($event->getPayload()),
+            'payloadString' => ToolsHelper::toJson($event->toArray()),
         ]);
 
         self::getQueueEvent()->broadcast($job, $routingKey);
@@ -91,10 +91,11 @@ class EventHelper
             }
 
             /**
-             * @var BaseEvent $eventClass
+             * @var BaseEvent|string $eventClass
              */
             foreach ($eventMap as $eventClass => $method) {
-                if ($eventClass::getName() == $eventName) {
+
+                if (class_exists($eventClass) && $eventClass::getName() == $eventName) {
                     return $eventClass;
                 }
             }

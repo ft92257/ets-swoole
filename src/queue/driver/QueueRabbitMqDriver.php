@@ -3,8 +3,10 @@
 namespace Ets\queue\driver;
 
 use Ets\Ets;
+use Ets\helper\ToolsHelper;
 use Ets\pool\connector\RabbitMqConnector;
 use Ets\queue\BroadcastQueue;
+use Ets\queue\Message;
 use Ets\queue\Queue;
 use PhpAmqpLib\Message\AMQPMessage;
 
@@ -21,6 +23,7 @@ class QueueRabbitMqDriver extends QueueBaseDriver
      */
     protected $currentMessage;
 
+    const PROPERTY_ATTEMPT = 'attempt';
 
     /**
      * @Override
@@ -40,9 +43,12 @@ class QueueRabbitMqDriver extends QueueBaseDriver
     }
 
 
-    public function push(Queue $queue, string $message, int $delay = 0)
+    public function push(Queue $queue, Message $message, int $delay = 0)
     {
-        $msg = new AMQPMessage($message, []);
+        $msg = new AMQPMessage(
+            ToolsHelper::toJson($message->getJobArrayData()),
+            [self::PROPERTY_ATTEMPT => $message->getAttempt()]
+        );
 
         $this->getChannel()->basic_publish($msg, $this->exchangeName, $queue->getComponentName());
     }
@@ -52,12 +58,15 @@ class QueueRabbitMqDriver extends QueueBaseDriver
      *
      * @Override
      * @param BroadcastQueue $queue
-     * @param string $message
+     * @param Message $message
      * @param $routingKey
      */
-    public function broadcast(BroadcastQueue $queue, string $message, $routingKey)
+    public function broadcast(BroadcastQueue $queue, Message $message, $routingKey)
     {
-        $msg = new AMQPMessage($message, []);
+        $msg = new AMQPMessage(
+            ToolsHelper::toJson($message->getJobArrayData()),
+            [self::PROPERTY_ATTEMPT => $message->getAttempt()]
+        );
 
         $this->getChannel()->basic_publish($msg, $this->exchangeName, $routingKey);
     }
@@ -65,9 +74,9 @@ class QueueRabbitMqDriver extends QueueBaseDriver
     /**
      * 队列消费
      * @param $queue Queue
-     * @return String
+     * @return Message
      */
-    public function consume(Queue $queue): string
+    public function consume(Queue $queue): Message
     {
         $currentMessage = null;
         $this->getChannel()->basic_consume(
@@ -89,7 +98,9 @@ class QueueRabbitMqDriver extends QueueBaseDriver
 
         $this->currentMessage = $currentMessage;
 
-        return $this->currentMessage->getBody();
+        $jobArrayData = json_decode($this->currentMessage->getBody(), true);
+
+        return Message::build($jobArrayData, $this->currentMessage->get_properties()['attempt'] ?? 0);
     }
 
     public function success(Queue $queue)
@@ -97,8 +108,10 @@ class QueueRabbitMqDriver extends QueueBaseDriver
         $this->currentMessage->ack();
     }
 
-    public function retry(int $delay)
+    public function retry(int $delay, int $hasRetryCount)
     {
+        $this->currentMessage->set(self::PROPERTY_ATTEMPT, $hasRetryCount);
+
         $this->currentMessage->reject();
     }
 
