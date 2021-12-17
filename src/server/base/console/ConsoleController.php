@@ -1,11 +1,11 @@
 <?php
 namespace Ets\server\base\console;
 
-use Ets\base\Component;
 use Ets\consts\EtsConst;
+use Ets\server\base\Controller;
 use Ets\server\result\JsonResult;
 
-class ConsoleController extends Component
+class ConsoleController extends Controller
 {
     /**
      * @var ConsoleRequest

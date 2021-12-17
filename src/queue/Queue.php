@@ -5,13 +5,10 @@ namespace Ets\queue;
 use Ets\base\Component;
 use Ets\Ets;
 use Ets\event\EventHelper;
-use Ets\event\QueueErrorEvent;
-use Ets\event\QueueFinishEvent;
-use Ets\event\QueuePushEvent;
-use Ets\helper\ToolsHelper;
+use Ets\event\events\QueueErrorEvent;
+use Ets\event\events\QueueFinishEvent;
 use Ets\queue\driver\QueueBaseDriver;
 use Ets\queue\driver\QueueRedisDriver;
-use phpseclib3\Crypt\EC\BaseCurves\Base;
 
 class Queue extends Component
 {

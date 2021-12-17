@@ -63,6 +63,8 @@ abstract class Model extends BaseArrayObject implements ModelInterface
     }
 
     /**
+     * 获取command实例，可在子类覆盖
+     *
      * @return CommandInterface
      */
     protected function getCommand()
@@ -139,7 +141,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
 
         $command = $this->getCommand();
 
-        $row = $command->queryOne($db, $query->buildQuerySql());
+        $row = $command->queryOne($db, $query->limit(1)->buildQuerySql());
 
         return $query->adaptOneResult($row);
     }
@@ -153,6 +155,34 @@ abstract class Model extends BaseArrayObject implements ModelInterface
         $rows = $command->queryAll($db, $query->buildQuerySql());
 
         return $query->adaptAllResult($rows);
+    }
+
+    public function count(Query $query): int
+    {
+        $query->select('count(*) as c');
+        $result = $this->getOne($query);
+
+        return $result['c'] ?? 0;
+    }
+
+    /**
+     * @param Query $query
+     * @param Pagination $pagination
+     * @return array
+     */
+    public function getPageList(Query $query, Pagination $pagination)
+    {
+        if ($pagination->isGetCount()) {
+            $count = $this->count($query);
+        } else {
+            $count = 0;
+        }
+
+        $query->offset($pagination->getOffset())->limit($pagination->getLimit());
+
+        $data = $this->getAll($query);
+
+        return $pagination->getResult($data, $count);
     }
 
     /**
@@ -231,13 +261,13 @@ abstract class Model extends BaseArrayObject implements ModelInterface
         return new static($attributes);
     }
 
-    protected function getPrimaryCondition(): array
+    protected function getPrimaryCondition($model): array
     {
         $primaryKey = static::getPrimaryKey();
         $where = [];
         if (is_array($primaryKey)) {
             foreach ($primaryKey as $k) {
-                $value = $this->{$k};
+                $value = $model->{$k};
 
                 if (empty($value)) {
                     throw new EtsException("主键值不能为空：" . $k);
@@ -246,7 +276,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
                 $where[$k] = $value;
             }
         } else {
-            $value = $this->{$primaryKey};
+            $value = $model->{$primaryKey};
             if (empty($value)) {
                 throw new EtsException("主键值不能为空：" . $primaryKey);
             }
@@ -265,7 +295,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
      */
     public function modify(array $attributes)
     {
-        $where = $this->getPrimaryCondition();
+        $where = $this->getPrimaryCondition($this);
 
         $ret = static::updateAll($attributes, $where);
         if ($ret) {
@@ -303,5 +333,102 @@ abstract class Model extends BaseArrayObject implements ModelInterface
         $sql = $this->createQuery()->buildBatchInsertSql($fields, $data, $this->getCreateTimeValue());
 
         return $this->getCommand()->execute($this->getDb(), $sql);
+    }
+
+    public function begin()
+    {
+        $this->getCommand()->begin($this->getDb());
+    }
+
+    public function commit()
+    {
+        $this->getCommand()->commit($this->getDb());
+    }
+
+    public function rollback()
+    {
+        $this->getCommand()->rollback($this->getDb());
+    }
+
+    /**
+     * @param RelationBase|string $relation
+     * @param string $bindToAttribute 需要绑定到当前模型的哪个字段
+     * @throws
+     */
+    public function bindBelongModel(string $relation, string $bindToAttribute)
+    {
+        $mainClass = $relation::getMainModelClass();
+        if (! ($this instanceof $mainClass)) {
+            throw new EtsException("模型关系类配置错误");
+        }
+
+        $fieldMap = $relation::getFieldMap();
+        $where = [];
+        foreach ($fieldMap as $mainField => $belongField) {
+            $where[$belongField] = $this->$mainField;
+        }
+
+        /**
+         * @var Model $modelClass
+         */
+        $modelClass = $relation::getBelongModelClass();
+
+        $this->$bindToAttribute = $modelClass::build()->findOne($where);
+    }
+
+    /**
+     * @param static[] $models
+     * @param RelationBase|string $relation
+     * @param string $bindToAttribute
+     */
+    public function bindBelongModelList(array $models, string $relation, string $bindToAttribute)
+    {
+        $fieldMap = $relation::getFieldMap();
+        $where = [];
+        foreach ($fieldMap as $mainField => $belongField) {
+            $where[$belongField] = array_column($models, $this->$mainField);
+        }
+
+        /**
+         * @var Model $modelClass
+         */
+        $modelClass = $relation::getBelongModelClass();
+
+        $belongModels = $modelClass::build()->findAll($where);
+
+        $indexedModels = [];
+        foreach ($belongModels as $belongModel) {
+
+            $index = $this->getRelationIndex(array_values($fieldMap), $belongModel);
+
+            if ($index) {
+                $indexedModels[$index] = $belongModel;
+            }
+        }
+
+        foreach ($models as $model) {
+
+            $index = $this->getRelationIndex(array_keys($fieldMap), $model);
+
+            if ($index && ! empty($indexedModels[$index])) {
+                $model[$bindToAttribute] = $indexedModels[$index];
+            }
+        }
+    }
+
+    protected function getRelationIndex($fields, $model)
+    {
+        $values = [];
+        foreach ($fields as $field) {
+            if (empty($model[$field])) {
+                return '';
+            }
+
+            $values[] = $model[$field];
+        }
+
+        sort($values);
+
+        return join('-', $values);
     }
 }

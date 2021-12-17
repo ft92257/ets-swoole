@@ -1,7 +1,8 @@
 <?php
 
-namespace Ets\event;
+namespace Ets\event\events;
 
+use Ets\event\BaseEvent;
 use Ets\queue\BaseJob;
 
 class QueueErrorEvent extends BaseEvent

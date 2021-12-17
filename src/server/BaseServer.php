@@ -3,6 +3,10 @@
 namespace Ets\server;
 
 use Ets\base\Component;
+use Ets\event\EventHelper;
+use Ets\event\events\RequestBeforeEvent;
+use Ets\event\events\RequestErrorEvent;
+use Ets\event\events\RequestFinishEvent;
 use Ets\server\base\Controller;
 use Ets\base\EtsException;
 use Ets\consts\EtsConst;
@@ -106,6 +110,11 @@ abstract class BaseServer extends Component
                 throw new EtsException($output, EtsConst::RESULT_CODE_SYSTEM_ERROR);
             }
 
+            // 请求执行前事件
+            EventHelper::localTrigger(new RequestBeforeEvent([
+                'request' => $request
+            ]));
+
             /**
              * @var $controller Controller
              */
@@ -119,10 +128,22 @@ abstract class BaseServer extends Component
              */
             $controller->$method();
 
+            // 请求执行成功事件
+            EventHelper::localTrigger(new RequestFinishEvent([
+                'request' => $request,
+                'response' => $response,
+            ]));
+
         } catch (\Throwable $e) {
 
             $this->handleError($e, $response);
 
+            // 请求执行异常事件
+            EventHelper::localTrigger(new RequestErrorEvent([
+                'request' => $request,
+                'response' => $response,
+                'exception' => $e
+            ]));
         }
 
         try {
