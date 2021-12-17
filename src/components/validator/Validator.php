@@ -19,14 +19,7 @@ class Validator extends Component
         $this->errors = [];
     }
 
-    public function isString($field, $errorMessage = '')
-    {
-        if (! is_string($this->data[$field])) {
-            $this->errors[] = $errorMessage ? $errorMessage : $field . '参数必须是字符串类型';
-        }
-    }
-
-    public function validate($throw = true)
+    public function validate(bool $throw = true)
     {
         if (! empty($this->errors)) {
             if ($throw) {
@@ -38,4 +31,57 @@ class Validator extends Component
 
         return null;
     }
+
+    public function getValue(string $field)
+    {
+        return $this->data[$field] ?? null;
+    }
+
+    public function addError($errorMessage, $default)
+    {
+        $this->errors[] = $errorMessage ? $errorMessage : $default;
+    }
+
+    public function isString(string $field, string $errorMessage = '')
+    {
+        if (! is_string($this->getValue($field))) {
+
+            $this->addError($errorMessage, $field . '参数必须是字符串类型');
+        }
+    }
+
+    public function notEmpty(string $field, string $errorMessage = '')
+    {
+        if (empty($this->getValue($field))) {
+
+            $this->addError($errorMessage, $field . '参数不能为空');
+        }
+    }
+
+    public function required(string $field, string $errorMessage = '')
+    {
+        if ($this->getValue($field) == null) {
+
+            $this->addError($errorMessage, $field . '参数必须');
+        }
+    }
+
+    public function isNumber(string $field, string $errorMessage = '')
+    {
+        if (! is_numeric($this->getValue($field))) {
+
+            $this->addError($errorMessage, $field . '参数必须是数字');
+        }
+    }
+
+    public function length(string $field, int $min, int $max, string $errorMessage = '')
+    {
+        $len = strlen($this->getValue($field));
+        if ($len < $min || $len > $max) {
+
+            $this->addError($errorMessage, $field . '参数字符长度不合法');
+        }
+    }
+
+
 }
