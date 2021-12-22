@@ -107,7 +107,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
     {
         $slaves = $this->getSlaveConfig();
         if (empty($slaves)) {
-            return $this->getDb();
+            return $this->getDb(false);
         }
 
         $random = mt_rand(1, 100);
@@ -202,7 +202,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
      * @param $condition
      * @return mixed
      */
-    protected function getOneByCondition($condition)
+    protected function getOneByCondition(array $condition)
     {
         $hashMap = CoroutineVar::getHashMap(EtsConst::COROUTINE_MODEL_OBJECTS);
 
@@ -227,7 +227,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
      * @return static
      * @throws EtsException
      */
-    public function findOne($condition)
+    public function findOne(array $condition)
     {
         if (! is_array($condition)) {
             throw new EtsException('查询条件必须是数组！');
@@ -236,7 +236,7 @@ abstract class Model extends BaseArrayObject implements ModelInterface
         return self::getOneByCondition($condition);
     }
 
-    public function findAll($condition)
+    public function findAll(array $condition)
     {
         $query = $this->createQuery()->where($condition)->resultClass(static::class);
 

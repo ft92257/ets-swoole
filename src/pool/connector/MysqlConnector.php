@@ -31,6 +31,13 @@ class MysqlConnector extends BasePoolConnector
         ];
     }
 
+    protected function allowReadFields()
+    {
+        return [
+            'host', 'port', 'username', 'password', 'database', 'charset', 'timeout'
+        ];
+    }
+
     /**
      * 连接数据库/重连
      *

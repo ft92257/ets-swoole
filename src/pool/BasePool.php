@@ -7,8 +7,8 @@ use Ets\pool\connector\BasePoolConnector;
 
 abstract class BasePool extends Component
 {
-    // 连接类组件名称
-    protected $_wrapperName;
+    // 父工厂组件
+    protected $factoryComponent;
 
     /**
      * @var BasePoolConnector[]
@@ -20,9 +20,9 @@ abstract class BasePool extends Component
      */
     public abstract function getConnection();
 
-    public function setWrapperName($wrapperName)
+    public function setFactoryComponent($factoryComponent)
     {
-        $this->_wrapperName = $wrapperName;
+        $this->factoryComponent = $factoryComponent;
     }
 
     /**
@@ -30,13 +30,13 @@ abstract class BasePool extends Component
      *
      * @return BasePoolConnector
      */
-    protected function getConnectionWrapper()
+    protected function createConnector()
     {
         /**
-         * @var $wrapper BasePoolConnector
+         * @var $factory BasePoolConnector
          */
-        $wrapper = Ets::component($this->_wrapperName);
+        $factory = Ets::$app->getComponentByName($this->factoryComponent, true);
 
-        return $wrapper->build();
+        return $factory->createConnector();
     }
 }

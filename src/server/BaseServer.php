@@ -7,6 +7,7 @@ use Ets\event\EventHelper;
 use Ets\event\events\RequestBeforeEvent;
 use Ets\event\events\RequestErrorEvent;
 use Ets\event\events\RequestFinishEvent;
+use Ets\helper\ToolsHelper;
 use Ets\server\base\Controller;
 use Ets\base\EtsException;
 use Ets\consts\EtsConst;
@@ -103,7 +104,7 @@ abstract class BaseServer extends Component
             $request->setRouterInfo($routerResult);
 
             // 路由检测
-            if (! class_exists($class) || ! method_exists($class, $method)) {
+            if (! ToolsHelper::classExists($class) || ! method_exists($class, $method)) {
 
                 $output = Ets::$app->isDebug() ? $class . '::' . $method . ' not exists' : '404';
 

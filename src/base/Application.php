@@ -83,22 +83,25 @@ class Application extends BaseObject
      * 根据名称获取component组件
      *
      * @param $name
+     * @param bool $getConnectorParent 是否获取连接组件的父工厂组件
      * @return mixed
      * @throws EtsException
      */
-    public function getComponentByName($name)
+    public function getComponentByName($name, $getConnectorParent = false)
     {
         if (empty($this->_components[$name])) {
             $this->_components[$name] = $this->loadComponentInstance($name);
         }
 
-        if ($this->_components[$name] instanceof BasePoolConnector) {
+        if (! $getConnectorParent && $this->_components[$name] instanceof BasePoolConnector) {
             /**
-             * @var $wrapper BasePoolConnector
+             * 原始组件，不带连接
+             * @var $connector BasePoolConnector
              */
-            $wrapper = $this->_components[$name];
+            $connector = $this->_components[$name];
 
-            return $wrapper->getConnection();
+            // 真实带连接的组件
+            return $connector->getConnection();
         }
 
         return $this->_components[$name];

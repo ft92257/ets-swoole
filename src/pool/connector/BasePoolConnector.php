@@ -60,7 +60,7 @@ abstract class BasePoolConnector extends Component
             $this->pool = Ets::$app->loadComponentInstanceByConfig($this->poolConfig, $this->getComponentName() . '-pool');
         }
 
-        $this->pool->setWrapperName($this->getComponentName());
+        $this->pool->setFactoryComponent($this->getComponentName());
     }
 
     public function getConnection()
@@ -121,14 +121,28 @@ abstract class BasePoolConnector extends Component
     public abstract function close();
 
     /**
-     * 构建wrapper实例
-     * @return $this
+     * 新构建连接实例
+     *
+     * @return static
      */
-    public function build()
+    public function createConnector()
+    {
+        $params = $this->toArray();
+        $className = get_class($this);
+
+        /**
+         * @var $connector static
+         */
+        $connector = new $className($params);
+
+        $connector->initConnect();
+
+        return $connector;
+    }
+
+    public function initConnect()
     {
         $this->instance = $this->connect();
-
-        return $this;
     }
 
     /**

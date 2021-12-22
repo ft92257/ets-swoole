@@ -4,6 +4,7 @@ namespace Ets\queue\jobs;
 
 use Ets\event\BaseEvent;
 use Ets\event\EventHelper;
+use Ets\helper\ToolsHelper;
 use Ets\queue\BaseJob;
 
 class EventJob extends BaseJob
@@ -25,7 +26,7 @@ class EventJob extends BaseJob
          * @var $eventClass BaseEvent
          */
         $eventClass = EventHelper::getClassByName($this->name);
-        if (! class_exists($eventClass)) {
+        if (! ToolsHelper::classExists($eventClass)) {
             return;
         }
 

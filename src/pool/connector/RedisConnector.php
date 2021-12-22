@@ -27,6 +27,13 @@ class RedisConnector extends BasePoolConnector
         ];
     }
 
+    protected function allowReadFields()
+    {
+        return [
+            'host', 'port', 'password', 'database', 'timeout'
+        ];
+    }
+
     /**
      * 连接redis/重连
      *

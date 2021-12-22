@@ -3,6 +3,7 @@
 namespace Ets;
 
 use Ets\base\Application;
+use Ets\helper\ToolsHelper;
 use Ets\server\HttpServer;
 
 
@@ -105,7 +106,7 @@ class Ets
     public static function component($name, $throwException = true)
     {
         try {
-            if (class_exists($name)) {
+            if (ToolsHelper::classExists($name)) {
                 return self::$app->getComponentByClass($name);
             } else {
                 return self::$app->getComponentByName($name);

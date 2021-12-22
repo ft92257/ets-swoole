@@ -95,7 +95,7 @@ class EventHelper
              */
             foreach ($eventMap as $eventClass => $method) {
 
-                if (class_exists($eventClass) && $eventClass::getName() == $eventName) {
+                if (ToolsHelper::classExists($eventClass) && $eventClass::getName() == $eventName) {
                     return $eventClass;
                 }
             }

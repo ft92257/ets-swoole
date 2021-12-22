@@ -1,7 +1,7 @@
 <?php
 namespace Ets\model;
 
-use Ets\base\BaseObject;
+use Ets\base\Component;
 use Ets\base\EtsException;
 use Ets\consts\LogCategoryConst;
 use Ets\Ets;
@@ -9,7 +9,7 @@ use Ets\event\EventHelper;
 use Ets\event\events\SqlErrorEvent;
 use Ets\pool\connector\MysqlConnector;
 
-class Command extends BaseObject implements CommandInterface
+class Command extends Component implements CommandInterface
 {
     // 是否记录执行日志
     protected $isLogExecute = false;

@@ -61,7 +61,7 @@ class Pool extends BasePool
         }
 
         if (empty($this->connections[$index]) || ! $this->connections[$index]->isConnected()) {
-            $this->connections[$index] = $this->getConnectionWrapper();
+            $this->connections[$index] = $this->createConnector();
         }
 
         // 设置为使用中

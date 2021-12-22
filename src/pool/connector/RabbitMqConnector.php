@@ -28,6 +28,13 @@ class RabbitMqConnector extends BasePoolConnector
         ];
     }
 
+    protected function allowReadFields()
+    {
+        return [
+            'host', 'port', 'username', 'password', 'vhost'
+        ];
+    }
+
     /**
      * 连接rabbitMq/重连
      *

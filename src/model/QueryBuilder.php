@@ -6,23 +6,6 @@ use Ets\base\EtsException;
 
 class QueryBuilder extends BaseObject
 {
-    /**
-     * @param $query Query
-     * @return string
-     */
-    public static function buildQuery($query)
-    {
-        $where = static::buildCondition($query->where);
-
-        $sql = 'SELECT ' . $query->select . ' FROM `' . $query->tableName . "`"
-            . ($where ? " WHERE $where" : '')
-            . ($query->groupBy ? " GROUP BY " . $query->groupBy : '')
-            . ($query->having ? " HAVING " . $query->having : '')
-            . ($query->orderBy ? " ORDER BY " . $query->orderBy: '')
-            . ($query->limit ? " LIMIT " . ($query->offset ? $query->offset . ',' : '') . $query->limit : '');
-
-        return $sql;
-    }
 
     /**
      * @param string $value

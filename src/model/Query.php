@@ -4,10 +4,11 @@ namespace Ets\model;
 use Ets\base\BaseArrayObject;
 use Ets\base\BaseObject;
 use Ets\base\EtsException;
+use Ets\helper\ToolsHelper;
 
 class Query extends BaseObject
 {
-    public $tableName;
+    protected $tableName;
 
     protected $select = '*';
 
@@ -27,13 +28,26 @@ class Query extends BaseObject
 
     protected $rawSql;
 
+    // 返回结果数据对象类型
     protected $resultClass = BaseArrayObject::class;
+
+    // 十一位以内非0开头的数字字符串转为int类型
+    protected $isDigitizing = true;
 
     public function buildQuerySql()
     {
-        $this->rawSql = QueryBuilder::buildQuery($this);
+        $where = QueryBuilder::buildCondition($this->where);
 
-        return $this->rawSql;
+        $sql = 'SELECT ' . $this->select . ' FROM `' . $this->tableName . "`"
+            . ($where ? " WHERE $where" : '')
+            . ($this->groupBy ? " GROUP BY " . $this->groupBy : '')
+            . ($this->having ? " HAVING " . $this->having : '')
+            . ($this->orderBy ? " ORDER BY " . $this->orderBy: '')
+            . ($this->limit ? " LIMIT " . ($this->offset ? $this->offset . ',' : '') . $this->limit : '');
+
+        $this->rawSql = $sql;
+
+        return $sql;
     }
 
     public function buildInsertSql(array $attributes)
@@ -165,6 +179,11 @@ class Query extends BaseObject
         return $condition;
     }
 
+    /**
+     * @param $condition
+     * @return $this
+     * @throws EtsException
+     */
     public function andOrWhere($condition)
     {
         if (! is_array($condition)) {
@@ -275,15 +294,36 @@ class Query extends BaseObject
         return $this;
     }
 
+    /**
+     * @param string $resultClass
+     * @return $this
+     */
     public function resultClass(string $resultClass)
     {
         $this->resultClass = $resultClass;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $isDigitizing
+     * @return $this
+     */
+    public function digitizing(bool $isDigitizing)
+    {
+        $this->isDigitizing = $isDigitizing;
+
+        return $this;
     }
 
     public function adaptOneResult(array $row)
     {
         if (empty($row)) {
             return null;
+        }
+
+        if ($this->isDigitizing) {
+            ToolsHelper::digitizingRow($row);
         }
 
         if (empty($this->resultClass)) {
@@ -297,6 +337,12 @@ class Query extends BaseObject
     {
         if (empty($rows)) {
             return null;
+        }
+
+        if ($this->isDigitizing) {
+            foreach ($rows as &$row) {
+                ToolsHelper::digitizingRow($row);
+            }
         }
 
         if (empty($this->resultClass)) {
