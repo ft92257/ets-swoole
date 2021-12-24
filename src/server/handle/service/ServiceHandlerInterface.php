@@ -1,6 +1,6 @@
 <?php
 
-namespace Ets\server\handle\request;
+namespace Ets\server\handle\service;
 
 
 use Ets\service\client\HttpClient;

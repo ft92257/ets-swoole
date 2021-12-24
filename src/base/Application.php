@@ -75,6 +75,17 @@ class Application extends BaseObject
                 $this->componentClassMap[$componentConfig['class']][] = $name;
             } else {
                 $this->componentClassMap[$componentConfig['class']] = [$name];
+                $parents = class_parents($componentConfig['class']);
+                $implements = class_implements($componentConfig['class']);
+                $parents = array_merge($parents, $implements);
+
+                foreach ($parents as $parent) {
+                    if (isset($this->componentClassMap[$parent])) {
+                        $this->componentClassMap[$parent][] = $name;
+                    } else {
+                        $this->componentClassMap[$parent] = [$name];
+                    }
+                }
             }
         }
     }
@@ -117,7 +128,6 @@ class Application extends BaseObject
         if (count($names) > 1) {
             throw new EtsException("找到多个component，请指定名称：" . $className);
         }
-
         return $this->getComponentByName($names[0]);
     }
 

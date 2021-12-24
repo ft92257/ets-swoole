@@ -98,7 +98,7 @@ class ToolsHelper
     {
         try {
 
-            return class_exists($className);
+            return class_exists($className) || interface_exists($className) || trait_exists($className);
 
         } catch (\Throwable $e) {
 

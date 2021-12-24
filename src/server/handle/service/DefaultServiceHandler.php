@@ -5,7 +5,6 @@ namespace Ets\server\handle\service;
 use Ets\base\Component;
 use Ets\consts\EtsConst;
 use Ets\coroutine\CoroutineVar;
-use Ets\server\handle\request\ServiceHandlerInterface;
 use Ets\service\client\HttpClient;
 use Ets\service\client\TcpClient;
 

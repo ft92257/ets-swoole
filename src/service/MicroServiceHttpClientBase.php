@@ -7,7 +7,7 @@ namespace Ets\service;
 use Ets\base\EtsException;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
-use Ets\server\handle\request\ServiceHandlerInterface;
+use Ets\server\handle\service\ServiceHandlerInterface;
 use Ets\server\handle\service\DefaultServiceHandler;
 use Ets\server\result\JsonResult;
 use Ets\service\breaker\Breaker;
@@ -38,7 +38,7 @@ abstract class MicroServiceHttpClientBase
      */
     protected function getServiceHandle()
     {
-        return Ets::component(DefaultServiceHandler::class, false);
+        return Ets::component(ServiceHandlerInterface::class, false);
     }
 
 
