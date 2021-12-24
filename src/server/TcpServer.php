@@ -4,7 +4,7 @@ namespace Ets\server;
 
 use Ets\server\base\tcp\TcpRequest;
 use Ets\server\base\tcp\TcpResponse;
-use Ets\server\errorHandle\DefaultErrorHandler;
+use Ets\server\handle\error\DefaultErrorHandler;
 use Ets\server\router\JsonRouter;
 use Swoole\Coroutine;
 

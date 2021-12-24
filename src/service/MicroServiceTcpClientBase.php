@@ -7,6 +7,7 @@ namespace Ets\service;
 use Ets\base\EtsException;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
+use Ets\server\handle\request\ServiceHandlerInterface;
 use Ets\service\breaker\Breaker;
 use Ets\service\breaker\BreakerInterface;
 use Ets\service\client\TcpClient;
@@ -18,42 +19,57 @@ abstract class MicroServiceTcpClientBase
      * @param \Throwable $e
      * @param $client
      */
-    protected static function fallback(\Throwable $e, TcpClient $client)
+    protected function fallback(\Throwable $e, TcpClient $client)
     {
         ToolsHelper::throws("调用微服务失败：" . $client->getUrl());
     }
 
-    protected static function getBreakKey(TcpClient $client)
+    protected function getBreakKey(TcpClient $client)
     {
         return $client->getUrl();
     }
 
     /**
+     * @return ServiceHandlerInterface
+     */
+    protected function getServiceHandle()
+    {
+        return Ets::component(ServiceHandlerInterface::class, false);
+    }
+
+    /**
+     * @return BreakerInterface
+     */
+    protected function getBreaker()
+    {
+        return Ets::component(Breaker::class, false);
+    }
+
+    /**
      * @param TcpClient $tcpClient
-     * @param string $fallback
-     * @param string $breakerComponent
      * @return string
      */
     protected function callApi(
-        TcpClient $tcpClient,
-        $fallback = 'static::fallback',
-        $breakerComponent = Breaker::class
+        TcpClient $tcpClient
     ): string {
 
-        /**
-         * @var $breaker BreakerInterface
-         */
-        $breaker = Ets::component($breakerComponent, false);
+        $breaker = $this->getBreaker();
         $breakKey = static::getBreakKey($tcpClient);
 
         if ($breaker && $breaker->isBreaking($breakKey)) {
 
             $e = new EtsException("系统熔断中");
 
-            return $fallback($e, $tcpClient);
+            $this->fallback($e, $tcpClient);
+            return '';
         }
 
         try {
+
+            $serviceHandle = $this->getServiceHandle();
+            if ($serviceHandle) {
+                $serviceHandle->beforeTcpMicroService($tcpClient);
+            }
 
             return $tcpClient->callTcp();
 
@@ -63,7 +79,8 @@ abstract class MicroServiceTcpClientBase
                 $breaker->addError($breakKey);
             }
 
-            return $fallback($e, $tcpClient);
+            $this->fallback($e, $tcpClient);
+            return '';
         }
     }
 

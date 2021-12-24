@@ -16,7 +16,8 @@ use Ets\coroutine\CoroutineVar;
 use Ets\pool\connector\BasePoolConnector;
 use Ets\server\base\RequestInterface;
 use Ets\server\base\ResponseInterface;
-use Ets\server\errorHandle\ErrorHandlerInterface;
+use Ets\server\handle\error\ErrorHandlerInterface;
+use Ets\server\handle\request\RequestHandlerInterface;
 use Ets\server\result\ResultInterface;
 use Ets\server\router\RouterInterface;
 
@@ -27,6 +28,8 @@ abstract class BaseServer extends Component
     protected $routerComponent;
 
     protected $errorHandlerComponent;
+
+    protected $requestHandleComponent = RequestHandlerInterface::class;
 
     protected $appConfig = [
         'timeZone' => 'Asia/Shanghai',
@@ -62,6 +65,19 @@ abstract class BaseServer extends Component
     public function setCoroutineSetting($coroutineSetting)
     {
         $this->coroutineSetting = array_merge($this->coroutineSetting, $coroutineSetting);
+    }
+
+    public function setRequestHandleComponent($requestHandleComponent)
+    {
+        $this->requestHandleComponent = $requestHandleComponent;
+    }
+
+    /**
+     * @return RequestHandlerInterface
+     */
+    protected function getRequestHandle()
+    {
+        return Ets::component($this->requestHandleComponent, false);
     }
 
     /**
@@ -115,6 +131,10 @@ abstract class BaseServer extends Component
             EventHelper::localTrigger(new RequestBeforeEvent([
                 'request' => $request
             ]));
+
+            if ($this->getRequestHandle()) {
+                $this->getRequestHandle()->beforeRequest($request);
+            }
 
             /**
              * @var $controller Controller

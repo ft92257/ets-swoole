@@ -4,7 +4,7 @@ namespace Ets\server;
 
 use Ets\server\base\http\HttpRequest;
 use Ets\server\base\http\HttpResponse;
-use Ets\server\errorHandle\HttpJsonErrorHandler;
+use Ets\server\handle\error\HttpJsonErrorHandler;
 use Ets\server\router\HttpRouter;
 use Swoole\Coroutine;
 

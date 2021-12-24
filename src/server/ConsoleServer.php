@@ -4,7 +4,7 @@ namespace Ets\server;
 
 use Ets\server\base\console\ConsoleRequest;
 use Ets\server\base\console\ConsoleResponse;
-use Ets\server\errorHandle\DefaultErrorHandler;
+use Ets\server\handle\error\DefaultErrorHandler;
 use Ets\server\router\ConsoleRouter;
 
 class ConsoleServer extends BaseServer

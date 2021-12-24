@@ -1,6 +1,6 @@
 <?php
 
-namespace Ets\server\errorHandle;
+namespace Ets\server\handle\error;
 
 use Ets\server\base\ResponseInterface;
 use Ets\server\result\ResultInterface;

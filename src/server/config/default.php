@@ -4,7 +4,13 @@ $config = [
 
     'componentsConfig' => [
         'defaultErrorHandle' => [
-            'class' => \Ets\server\errorHandle\DefaultErrorHandler::class,
+            'class' => \Ets\server\handle\error\DefaultErrorHandler::class,
+        ],
+        'defaultRequestHandle' => [
+            'class' => \Ets\server\handle\request\DefaultRequestHandler::class,
+        ],
+        'defaultServiceHandle' => [
+            'class' => \Ets\server\handle\service\DefaultServiceHandler::class,
         ],
         'defaultConsoleRouter' => [
             'class' => \Ets\server\router\ConsoleRouter::class,
