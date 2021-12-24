@@ -188,6 +188,7 @@ abstract class BaseServer extends Component
 
         } catch (\Throwable $e) {
             //
+            print_r($e->getMessage());
         }
 
     }

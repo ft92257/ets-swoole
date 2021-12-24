@@ -112,7 +112,6 @@ class Logger extends Component
             $targetMessages = $target['messages'];
             // 不影响其他协程, 重置内容
             $this->targets[$i]['messages'] = [];
-
             try {
 
                 $this->getTarget($target, $i)->setMessages($targetMessages)->export();

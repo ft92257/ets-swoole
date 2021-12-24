@@ -11,7 +11,7 @@ class ConsoleResponse extends BaseObject implements ResponseInterface
     /**
      * @var String
      */
-    protected $output;
+    protected $output = '';
 
     /**
      *

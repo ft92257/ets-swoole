@@ -2,11 +2,11 @@
 
 namespace Ets\log;
 
-use Ets\base\BaseObject;
+use Ets\base\Component;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
 
-abstract class BaseTarget extends BaseObject
+abstract class BaseTarget extends Component
 {
 
     protected $messages = [];

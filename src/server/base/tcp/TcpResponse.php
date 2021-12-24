@@ -26,7 +26,7 @@ class TcpResponse extends BaseObject implements ResponseInterface
     /**
      * @var String
      */
-    protected $output;
+    protected $output = '';
 
 
     /**

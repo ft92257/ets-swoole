@@ -14,7 +14,7 @@ class HttpResponse extends BaseObject implements ResponseInterface
     /**
      * @var String
      */
-    protected $output;
+    protected $output = '';
 
     protected $httpCode = 200;
 
