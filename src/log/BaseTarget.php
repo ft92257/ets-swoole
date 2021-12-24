@@ -3,6 +3,8 @@
 namespace Ets\log;
 
 use Ets\base\Component;
+use Ets\consts\EtsConst;
+use Ets\coroutine\CoroutineVar;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
 
@@ -28,8 +30,9 @@ abstract class BaseTarget extends Component
     protected function formatMessage($message)
     {
         $text = $message['text'];
+        $traceId = CoroutineVar::getObject(EtsConst::COROUTINE_TRACE_ID);
 
-        $msg = $message['timestamp'] . " [" . $message['level']. "][" . $message['category'] . "][".Ets::$app->getAppName(). "]\n"
+        $msg = $message['timestamp'] . " [" . $message['level']. "][" . $message['category'] . "][".Ets::$app->getAppName(). "][traceId:".$traceId."]\n"
             . (is_string($text) ? $text : ToolsHelper::toJson($text)) ;
 
         return $msg;

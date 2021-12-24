@@ -17,6 +17,7 @@ use Ets\pool\connector\BasePoolConnector;
 use Ets\server\base\RequestInterface;
 use Ets\server\base\ResponseInterface;
 use Ets\server\handle\error\ErrorHandlerInterface;
+use Ets\server\handle\request\DefaultRequestHandler;
 use Ets\server\handle\request\RequestHandlerInterface;
 use Ets\server\result\ResultInterface;
 use Ets\server\router\RouterInterface;
@@ -29,7 +30,7 @@ abstract class BaseServer extends Component
 
     protected $errorHandlerComponent;
 
-    protected $requestHandleComponent = RequestHandlerInterface::class;
+    protected $requestHandleComponent = DefaultRequestHandler::class;
 
     protected $appConfig = [
         'timeZone' => 'Asia/Shanghai',

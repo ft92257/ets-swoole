@@ -8,6 +8,7 @@ use Ets\base\EtsException;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
 use Ets\server\handle\request\ServiceHandlerInterface;
+use Ets\server\handle\service\DefaultServiceHandler;
 use Ets\server\result\JsonResult;
 use Ets\service\breaker\Breaker;
 use Ets\service\breaker\BreakerInterface;
@@ -37,7 +38,7 @@ abstract class MicroServiceHttpClientBase
      */
     protected function getServiceHandle()
     {
-        return Ets::component(ServiceHandlerInterface::class, false);
+        return Ets::component(DefaultServiceHandler::class, false);
     }
 
 
