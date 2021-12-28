@@ -38,7 +38,7 @@ abstract class MicroServiceHttpClientBase
      */
     protected function getServiceHandle()
     {
-        return Ets::component(ServiceHandlerInterface::class, false);
+        return Ets::component(DefaultServiceHandler::class, false);
     }
 
 
