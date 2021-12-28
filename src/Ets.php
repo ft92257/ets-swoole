@@ -3,7 +3,10 @@
 namespace Ets;
 
 use Ets\base\Application;
+use Ets\consts\EtsConst;
+use Ets\coroutine\CoroutineVar;
 use Ets\helper\ToolsHelper;
+use Ets\pool\connector\BasePoolConnector;
 use Ets\server\HttpServer;
 
 
@@ -129,6 +132,25 @@ class Ets
     public static function getParams($key)
     {
         return self::$app->params[$key] ?? null;
+    }
+
+    public static function endClear()
+    {
+        // 释放连接池
+        $wrappers = CoroutineVar::getArrayList(EtsConst::COROUTINE_POOL_WRAPPERS);
+        /**
+         * @var $wrapper BasePoolConnector
+         */
+        foreach ($wrappers->getValues() as $wrapper) {
+
+            $wrapper->freeUse();
+        }
+
+        // 写日志
+        Ets::getLogger()->flush();
+
+        // 释放当前协程的自定义全局变量内存
+        CoroutineVar::clear();
     }
 
 }

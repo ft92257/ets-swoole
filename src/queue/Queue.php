@@ -7,6 +7,7 @@ use Ets\Ets;
 use Ets\event\EventHelper;
 use Ets\event\events\QueueErrorEvent;
 use Ets\event\events\QueueFinishEvent;
+use Ets\event\events\QueuePushEvent;
 use Ets\queue\driver\QueueBaseDriver;
 use Ets\queue\driver\QueueRedisDriver;
 
@@ -55,7 +56,7 @@ class Queue extends Component
 
             $this->getDriver()->push($this, $message, $delay);
 
-            EventHelper::localTrigger(new QueueErrorEvent(['job' => $job]));
+            EventHelper::localTrigger(new QueuePushEvent(['job' => $job]));
 
         } catch (\Throwable $e) {
             // 推送失败，重试
@@ -69,7 +70,7 @@ class Queue extends Component
     }
 
     // 开启消费监听
-    public function listen()
+    public function listen($wait = 1)
     {
         while ($this->isContinue) {
             try {
@@ -81,12 +82,16 @@ class Queue extends Component
                 $job = $this->getJobByMessage($message);
 
                 if (empty($job)) {
-                    // 没有待消费的记录，等待3秒重试
-                    sleep(3);
+                    // 没有待消费的记录，等待1秒重试
+                    sleep($wait);
                     continue;
                 }
 
-                $this->executeJob($job, $message->getAttempt());
+                go(function () use ($job, $message) {
+                    $this->executeJob($job, $message->getAttempt());
+
+                    Ets::endClear();
+                });
 
             } catch (\Throwable $e) {
                 //
@@ -102,6 +107,10 @@ class Queue extends Component
     protected function getJobByMessage(Message $message)
     {
         $jobArrayData = $message->getJobArrayData();
+        if (empty($jobArrayData)) {
+            return null;
+        }
+
         $jobClass = $jobArrayData['className'];
 
         $job = new $jobClass($jobArrayData);

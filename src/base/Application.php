@@ -9,6 +9,8 @@ use Swoole\Runtime;
 
 class Application extends BaseObject
 {
+    const CLASS_FIELD = 'class';
+
     public $params = [];
 
     protected $componentsConfig = [];
@@ -71,12 +73,12 @@ class Application extends BaseObject
     protected function initComponentClassMap()
     {
         foreach ($this->componentsConfig as $name => $componentConfig) {
-            if (isset($this->componentClassMap[$componentConfig['class']])) {
-                $this->componentClassMap[$componentConfig['class']][] = $name;
+            if (isset($this->componentClassMap[$componentConfig[self::CLASS_FIELD]])) {
+                $this->componentClassMap[$componentConfig[self::CLASS_FIELD]][] = $name;
             } else {
-                $this->componentClassMap[$componentConfig['class']] = [$name];
-                $parents = class_parents($componentConfig['class']);
-                $implements = class_implements($componentConfig['class']);
+                $this->componentClassMap[$componentConfig[self::CLASS_FIELD]] = [$name];
+                $parents = class_parents($componentConfig[self::CLASS_FIELD]);
+                $implements = class_implements($componentConfig[self::CLASS_FIELD]);
                 $parents = array_merge($parents, $implements);
 
                 foreach ($parents as $parent) {
@@ -151,8 +153,8 @@ class Application extends BaseObject
 
     public function loadComponentInstanceByConfig($component, $name)
     {
-        $class = $component['class'];
-        unset($component['class']);
+        $class = $component[self::CLASS_FIELD];
+        unset($component[self::CLASS_FIELD]);
 
         /**
          * @var $instance Component
@@ -195,10 +197,9 @@ class Application extends BaseObject
     public function getComponentsBySuperClass($superClass)
     {
         $components = [];
-        foreach ($this->_components as $name => $component) {
-            if ($component instanceof $superClass) {
-                $components[] = $component;
-            }
+        foreach ($this->componentClassMap[$superClass] as $componentName) {
+
+            $components[] = $this->getComponentByName($componentName);
         }
 
         return $components;

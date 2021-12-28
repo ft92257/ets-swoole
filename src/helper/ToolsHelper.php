@@ -97,6 +97,10 @@ class ToolsHelper
     public static function classExists(string $className): bool
     {
         try {
+            $firstChar = substr($className, 0, 1);
+            if ($firstChar != '\\' && strtolower($firstChar) === $firstChar) {
+                return false;
+            }
 
             return class_exists($className) || interface_exists($className) || trait_exists($className);
 

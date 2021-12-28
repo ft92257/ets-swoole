@@ -171,21 +171,7 @@ abstract class BaseServer extends Component
         try {
             $this->response($response);
 
-            // 释放连接池
-            $wrappers = CoroutineVar::getArrayList(EtsConst::COROUTINE_POOL_WRAPPERS);
-            /**
-             * @var $wrapper BasePoolConnector
-             */
-            foreach ($wrappers->getValues() as $wrapper) {
-
-                $wrapper->freeUse();
-            }
-
-            // 写日志
-            Ets::getLogger()->flush();
-
-            // 释放当前协程的自定义全局变量内存
-            CoroutineVar::clear();
+            Ets::endClear();
 
         } catch (\Throwable $e) {
             //

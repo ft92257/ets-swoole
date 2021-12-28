@@ -49,6 +49,7 @@ class QueueRedisDriver extends QueueBaseDriver
      * @param $queue Queue
      * @param $message
      * @param $delay int 延迟执行时间
+     * @throws
      */
     public function push(Queue $queue, Message $message, int $delay = 0)
     {
@@ -56,9 +57,10 @@ class QueueRedisDriver extends QueueBaseDriver
         $index = $this->plusPushChannelIndex();
         $channel = $this->getChannel($queue->getComponentName(), $index);
 
+        $id = $redis->incr("$channel.message_id");
+
         $redis->multi();
 
-        $id = $redis->incr("$channel.message_id");
         $redis->hset("$channel.messages", $id, ToolsHelper::toJson($message->getJobArrayData()));
 
         $redis->hset("$channel.attempts", $id, $message->getAttempt());
@@ -70,6 +72,10 @@ class QueueRedisDriver extends QueueBaseDriver
         }
 
         $redis->exec();
+
+        if (! $redis->hexists("$channel.attempts", $id)) {
+            throw new EtsException("队列数据推送失败");
+        }
 
         return $id;
     }
@@ -170,12 +176,12 @@ class QueueRedisDriver extends QueueBaseDriver
 
         $messages = $this->reserve($channel);
         if (empty($messages)) {
-            return null;
+            return new Message();
         }
 
         $jobArrayData = json_decode($messages[1], true);
         if (empty($jobArrayData)) {
-            return null;
+            return new Message();
         }
 
         return Message::build($jobArrayData, $messages[0]);
