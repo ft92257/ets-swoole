@@ -31,6 +31,8 @@ abstract class MicroServiceTcpClientBase
     }
 
     /**
+     * 可在子类覆盖，替换为自定义的handle
+     *
      * @return ServiceHandlerInterface
      */
     protected function getServiceHandle()

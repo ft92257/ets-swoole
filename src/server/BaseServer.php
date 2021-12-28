@@ -24,12 +24,16 @@ use Ets\server\router\RouterInterface;
 
 abstract class BaseServer extends Component
 {
+    // controller包所在路径
     protected $controllerPackagePath;
 
+    // 路由component，可在serverComponent配置
     protected $routerComponent;
 
+    // 异常处理类，可在serverComponent配置
     protected $errorHandlerComponent;
 
+    // 请求拦截处理，可在serverComponent配置
     protected $requestHandleComponent = DefaultRequestHandler::class;
 
     protected $appConfig = [
