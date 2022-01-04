@@ -61,12 +61,16 @@ class Ets
 
     public static function autoload($className)
     {
-        if (substr($className, 0, 3) == 'Ets') {
+        $classFilePath = str_replace('\\', '/', $className);
+        $paths = explode('/', $classFilePath);
+        $first = array_shift($paths);
 
-            $classFile = self::$etsPath . str_replace('\\', '/', substr($className, 3)) . '.php';
-
+        if ($first == 'Ets') {
+            $classFile = self::$etsPath . join('/', $paths) . '.php';
+        } elseif ($first == 'application') {
+            $classFile = self::$applicationPath . join('/', $paths) . '.php';
         } else {
-            $classFile = dirname(self::$applicationPath) . '/' . str_replace('\\', '/', $className) . '.php';
+            $classFile = self::$applicationPath . str_replace('\\', '/', $className) . '.php';
         }
 
         if (! is_file($classFile)) {
