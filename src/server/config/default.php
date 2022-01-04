@@ -6,6 +6,9 @@ $config = [
         'defaultErrorHandle' => [
             'class' => \Ets\server\handle\error\DefaultErrorHandler::class,
         ],
+        'defaultHttpJsonErrorHandler' => [
+            'class' => \Ets\server\handle\error\HttpJsonErrorHandler::class,
+        ],
         'defaultRequestHandle' => [
             'class' => \Ets\server\handle\request\DefaultRequestHandler::class,
         ],
