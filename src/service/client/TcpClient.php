@@ -44,9 +44,13 @@ class TcpClient extends BaseObject
         ];
     }
 
+    /**
+     * @param array $config
+     * @return static
+     */
     public static function build($config = [])
     {
-        return new TcpClient($config);
+        return new static($config);
     }
 
     public function setHost(string $host)
