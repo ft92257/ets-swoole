@@ -31,7 +31,7 @@ class ConsoleController extends Controller
      * @param string $msg
      * @param int $code
      */
-    public function success($data, $msg = 'success', $code = EtsConst::RESULT_CODE_SUCCESS)
+    public function success($data = null, $msg = 'success', $code = EtsConst::RESULT_CODE_SUCCESS)
     {
         $result = JsonResult::success($data, $msg, $code);
 
