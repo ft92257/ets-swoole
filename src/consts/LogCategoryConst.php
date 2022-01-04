@@ -3,8 +3,9 @@ namespace Ets\consts;
 
 class LogCategoryConst
 {
-    const ERROR_REDIDS = 'email\redis';
     const ERROR_ALARM = 'email';
+    const ERROR_REDIDS = 'email\redis';
+    const ERROR_QUEUE = 'email\queue';
     const ERROR_NORMAL = 'application';
 
     const SQL_ERROR = 'sql\error';

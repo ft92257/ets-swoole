@@ -43,8 +43,11 @@ abstract class BaseServer extends Component
         'debug' => true
     ];
 
+    // 协程配置
     protected $coroutineSetting = [
+        // 建立 TCP 连接超时时间, 作用范围包括redis，mysql，http请求等
         'socket_connect_timeout' => 3,
+        // 读写超时时间
         'socket_timeout' => 10,
         'enable_preemptive_scheduler' => 1,
     ];

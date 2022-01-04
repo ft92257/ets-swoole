@@ -16,6 +16,11 @@ class Message extends BaseObject
      */
     protected $attempt;
 
+    protected function allowReadFields()
+    {
+        return ['attempt', 'jobArrayData'];
+    }
+
     public function getJobArrayData()
     {
         return $this->jobArrayData;

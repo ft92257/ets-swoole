@@ -3,11 +3,15 @@
 namespace Ets\queue;
 
 use Ets\base\Component;
+use Ets\consts\EtsConst;
+use Ets\consts\LogCategoryConst;
+use Ets\coroutine\CoroutineVar;
 use Ets\Ets;
 use Ets\event\EventHelper;
 use Ets\event\events\QueueErrorEvent;
 use Ets\event\events\QueueFinishEvent;
 use Ets\event\events\QueuePushEvent;
+use Ets\helper\ToolsHelper;
 use Ets\queue\driver\QueueBaseDriver;
 use Ets\queue\driver\QueueRedisDriver;
 
@@ -23,13 +27,18 @@ class Queue extends Component
     // 推送失败重试次数
     protected $pushRetryCount = 1;
 
+    private $errorCount = 0;
+
+    // 单进程最大同时消费的协程数量
+    protected $maxRunningCount = 5;
+
     /**
      * @Override
      * @return array
      */
     protected function allowInitFields()
     {
-        return ['driverComponent', 'pushRetryCount'];
+        return ['driverComponent', 'pushRetryCount', 'maxRunningCount'];
     }
 
     /**
@@ -72,8 +81,16 @@ class Queue extends Component
     // 开启消费监听
     public function listen($wait = 1)
     {
+        $loop = new Loop(['maxRunningCount' => $this->maxRunningCount]);
+
         while ($this->isContinue) {
             try {
+
+                if (! $loop->isAllowRunning()) {
+                    sleep(1);
+                    continue;
+                }
+
                 // 间隔10毫秒消费下一个
                 usleep(10000);
 
@@ -87,15 +104,32 @@ class Queue extends Component
                     continue;
                 }
 
-                go(function () use ($job, $message) {
+                go(function () use ($job, $message, $loop) {
+                    $loop->setRunning();
+
+                    // 协程初始化
+                    $traceId = uniqid();
+                    CoroutineVar::setObject(EtsConst::COROUTINE_TRACE_ID, $traceId);
+
                     $this->executeJob($job, $message->getAttempt());
 
                     Ets::endClear();
+
+                    $loop->finishRunning();
                 });
 
             } catch (\Throwable $e) {
-                //
+                // 连续错误60次后结束进程
+                $this->errorCount++;
+                if ($this->errorCount % 60 == 0) {
+                    Ets::error("队列消费异常：" . $e->getMessage() . "\n", LogCategoryConst::ERROR_QUEUE);
+
+                    exit;
+                }
+
                 echo "队列消费异常：" . $e->getMessage() . "\n";
+
+                sleep(1);
             }
         }
     }
@@ -122,6 +156,22 @@ class Queue extends Component
     public function execute()
     {
         $message = $this->getDriver()->consume($this);
+        $job = $this->getJobByMessage($message);
+
+        if (empty($job)) {
+            // 没有待消费的记录，等待3秒重试
+            echo "没有待消费的记录\n";
+
+            return;
+        }
+
+        $this->executeJob($job, null);
+    }
+
+    public function executeByMessage(string $messageJson)
+    {
+        $data = json_decode($messageJson, true);
+        $message = Message::build($data['jobArrayData'], $data['attempt']);
         $job = $this->getJobByMessage($message);
 
         if (empty($job)) {
