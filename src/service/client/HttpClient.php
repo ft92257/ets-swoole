@@ -85,6 +85,34 @@ class HttpClient extends BaseObject
         ];
     }
 
+    public function setHost(string $host)
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+    public function setPath(string $path)
+    {
+        $this->path = $path;
+
+        return $this;
+    }
+
+    public function setParams(string $params)
+    {
+        $this->params = $params;
+
+        return $this;
+    }
+
+    public function setHeaders(string $headers)
+    {
+        $this->headers = $headers;
+
+        return $this;
+    }
+
     public function getUrl()
     {
         return $this->host . $this->path;
@@ -95,11 +123,6 @@ class HttpClient extends BaseObject
         return $this->host;
     }
 
-    public function setHost($host)
-    {
-        $this->host = $host;
-    }
-
     public function getPath()
     {
         return $this->path;
@@ -108,6 +131,8 @@ class HttpClient extends BaseObject
     public function setHeader($key, $value)
     {
         $this->headers[$key] = $value;
+
+        return $this;
     }
 
     protected function parseUrl()

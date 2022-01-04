@@ -38,6 +38,32 @@ class TcpClient extends BaseObject
         ];
     }
 
+    public static function build($config = [])
+    {
+        return new TcpClient($config);
+    }
+
+    public function setHost(string $host)
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+    public function setPort(string $port)
+    {
+        $this->port = $port;
+
+        return $this;
+    }
+
+    public function setBody(string $body)
+    {
+        $this->body = $body;
+
+        return $this;
+    }
+
     public function getUrl()
     {
         return $this->host . ':' . $this->port;
