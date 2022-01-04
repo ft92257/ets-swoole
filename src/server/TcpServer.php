@@ -29,12 +29,15 @@ class TcpServer extends BaseServer
         'buffer_output_size' =>  32 * 1024 * 1024,
         'package_max_length' => 32 * 1024 * 1024,
         'open_eof_check' => true,
-        'package_eof' => "\r\n",
+        'package_eof' => "\r\n\r\n",// 接收请求的结束符
     ];
+
+    // 返回结果的结束符
+    protected $responseEof = "\r\n\r\n";
 
     protected function allowInitFields()
     {
-        return ['controllerPackagePath', 'routerComponent', 'errorHandlerComponent', 'port', 'host'];
+        return ['controllerPackagePath', 'routerComponent', 'errorHandlerComponent', 'port', 'host', 'responseEof'];
     }
 
     public function setSetting($setting)
@@ -48,7 +51,7 @@ class TcpServer extends BaseServer
     public function response($response)
     {
         try {
-            $response->getSwooleServer()->send($response->getFd(), $response->getOutput() . "\n");
+            $response->getSwooleServer()->send($response->getFd(), $response->getOutput() . $this->responseEof);
         } catch (\Throwable $e) {
             //
         }

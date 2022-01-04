@@ -14,3 +14,4 @@ require_once 'Coroutine.php';
 require_once 'Coroutine/Mysql.php';
 require_once 'Coroutine/Redis.php';
 require_once 'Coroutine/Http/Client.php';
+require_once 'Coroutine/Client.php';

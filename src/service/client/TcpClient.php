@@ -19,7 +19,13 @@ class TcpClient extends BaseObject
 
     protected $timeout = 3;
 
-    protected $ending = "\r\n";
+    protected $requestEof = "\r\n\r\n";
+
+    protected $packageSetting = [
+        'open_eof_check' => true,
+        'package_eof' => "\r\n\r\n",
+        'package_max_length' => 1024 * 1024 * 32,
+    ];
 
     // 日志记录几率百分比
     protected $logPercent = 100;
@@ -34,7 +40,7 @@ class TcpClient extends BaseObject
     protected function allowInitFields()
     {
         return [
-            'host', 'port', 'body', 'timeout', 'ending', 'logPercent', 'logCategory'
+            'host', 'port', 'body', 'timeout', 'requestEof', 'packageSetting', 'logPercent', 'logCategory'
         ];
     }
 
@@ -82,7 +88,13 @@ class TcpClient extends BaseObject
         }
 
         $client = new Client(SWOOLE_SOCK_TCP);
-        if (! $client->connect($this->host, $this->port, $this->timeout))
+
+        $setting = $this->packageSetting;
+        $setting['timeout'] = $this->timeout;
+
+        $client->set($setting);
+
+        if (! $client->connect($this->host, $this->port, 3))
         {
             $e = new EtsException('Tcp连接失败，请稍后再试：' . $this->host . ':' . $this->port);
 
@@ -96,8 +108,8 @@ class TcpClient extends BaseObject
             throw $e;
         }
 
-        if ($this->ending) {
-            $this->body .= $this->ending;
+        if ($this->requestEof) {
+            $this->body .= $this->requestEof;
         }
 
         try {
