@@ -49,7 +49,7 @@ class Client
         $resp = '';
         $start = time();
         $timeout = $this->timeout;
-        $lineLen = 16384;
+        $lineLen = 33554432;
         $ending = $this->packageEof;
 
         stream_set_timeout($this->connection, $timeout);

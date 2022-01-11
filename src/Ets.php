@@ -49,7 +49,7 @@ class Ets
      */
     public static function runServer($applicationPath, $serverComponent = HttpServer::class, $configFile = 'common/config/main.php')
     {
-        spl_autoload_register('Ets\Ets::autoload', true, true);
+        spl_autoload_register('Ets\Ets::autoload', true, false);
 
         self::$etsPath = dirname(__FILE__) . '/';
         self::$applicationPath = $applicationPath;

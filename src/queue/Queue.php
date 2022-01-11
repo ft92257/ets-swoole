@@ -12,7 +12,9 @@ use Ets\event\events\QueueErrorEvent;
 use Ets\event\events\QueueFinishEvent;
 use Ets\event\events\QueuePushEvent;
 use Ets\helper\ToolsHelper;
+use Ets\pool\connector\RabbitMqConnector;
 use Ets\queue\driver\QueueBaseDriver;
+use Ets\queue\driver\QueueRabbitMqDriver;
 use Ets\queue\driver\QueueRedisDriver;
 
 class Queue extends Component
@@ -96,27 +98,7 @@ class Queue extends Component
 
                 $message = $this->getDriver()->consume($this);
 
-                $job = $this->getJobByMessage($message);
-
-                if (empty($job)) {
-                    // 没有待消费的记录，等待1秒重试
-                    sleep($wait);
-                    continue;
-                }
-
-                go(function () use ($job, $message, $loop) {
-                    $loop->setRunning();
-
-                    // 协程初始化
-                    $traceId = uniqid();
-                    CoroutineVar::setObject(EtsConst::COROUTINE_TRACE_ID, $traceId);
-
-                    $this->executeJob($job, $message->getAttempt());
-
-                    Ets::endClear();
-
-                    $loop->finishRunning();
-                });
+                $this->executeInCoroutine($message, $loop);
 
             } catch (\Throwable $e) {
                 // 连续错误60次后结束进程
@@ -134,11 +116,21 @@ class Queue extends Component
         }
     }
 
+    public function listenMq()
+    {
+        /**
+         * @var $driver QueueRabbitMqDriver
+         */
+        $driver = $this->getDriver();
+
+        $driver->consumeByCallback($this);
+    }
+
     /**
      * @param Message $message
      * @return BaseJob
      */
-    protected function getJobByMessage(Message $message)
+    public function getJobByMessage(Message $message)
     {
         $jobArrayData = $message->getJobArrayData();
         if (empty($jobArrayData)) {
@@ -220,6 +212,38 @@ class Queue extends Component
                 ]));
             }
         }
+    }
+
+    public function executeInCoroutine(Message $message, Loop $loop)
+    {
+        if (! $loop->isAllowRunning()) {
+            sleep(1);
+            return;
+        }
+
+        $job = $this->getJobByMessage($message);
+
+        if (empty($job)) {
+            $this->getDriver()->success($this);
+            return;
+        }
+
+        $queue = $this;
+
+        go(function () use ($job, $message, $loop, $queue) {
+
+            $loop->setRunning();
+
+            // 协程初始化
+            CoroutineVar::setObject(EtsConst::COROUTINE_TRACE_ID, uniqid());
+
+            $queue->executeJob($job, $message->getAttempt());
+
+            Ets::endClear();
+
+            $loop->finishRunning();
+
+        });
     }
 
 }

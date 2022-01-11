@@ -2,12 +2,15 @@
 
 namespace Ets\queue\driver;
 
+use Ets\base\EtsException;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
 use Ets\pool\connector\RabbitMqConnector;
 use Ets\queue\BroadcastQueue;
+use Ets\queue\Loop;
 use Ets\queue\Message;
 use Ets\queue\Queue;
+use PhpAmqpLib\Exception\AMQPRuntimeException;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class QueueRabbitMqDriver extends QueueBaseDriver
@@ -71,36 +74,60 @@ class QueueRabbitMqDriver extends QueueBaseDriver
         $this->getChannel()->basic_publish($msg, $this->exchangeName, $routingKey);
     }
 
+
+    /**
+     * @param Queue $queue
+     */
+    public function consumeByCallback(Queue $queue)
+    {
+        $loop = new Loop(['maxRunningCount' => 1]);
+
+        while (true) {
+            try {
+                $this->getChannel()->basic_consume(
+                    $queue->getComponentName(),
+                    '',
+                    false,
+                    false,
+                    false,
+                    false,
+                    function (AMQPMessage $mqMessage) use ($queue, $loop) {
+                        // 该处为异步执行， 设置callback
+                        $this->currentMessage = $mqMessage;
+
+                        $jobArrayData = json_decode($this->currentMessage->getBody(), true);
+
+                        $message = Message::build($jobArrayData, $this->currentMessage->get_properties()['attempt'] ?? 0);
+
+                        $queue->executeInCoroutine($message, $loop);
+                    }
+                );
+
+                while ($this->getChannel()->is_consuming()) {
+                    // 执行callback
+                    $this->getChannel()->wait();
+                }
+
+            }  catch (AMQPRuntimeException $e) {
+
+                $this->getChannel()->close();
+
+                echo "rabbit异常断开，即将重试:" . $e->getMessage();
+
+                sleep(1);
+            }
+        }
+    }
+
     /**
      * 队列消费
      * @param $queue Queue
      * @return Message
+     * @throws
      */
     public function consume(Queue $queue): Message
     {
-        $currentMessage = null;
-        $this->getChannel()->basic_consume(
-            $queue->getComponentName(),
-            '',
-            false,
-            false,
-            false,
-            false,
-            function (AMQPMessage $message) use (& $currentMessage) {
-                // 该处为异步执行， 设置callback
-                $currentMessage = $message;
-            });
-
-        while ($this->getChannel()->is_consuming()) {
-            // 执行callback
-            $this->getChannel()->wait();
-        }
-
-        $this->currentMessage = $currentMessage;
-
-        $jobArrayData = json_decode($this->currentMessage->getBody(), true);
-
-        return Message::build($jobArrayData, $this->currentMessage->get_properties()['attempt'] ?? 0);
+        throw new EtsException("不支持该模式");
     }
 
     public function success(Queue $queue)
