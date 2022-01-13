@@ -1,5 +1,5 @@
 <?php
-namespace app\micro\components;
+namespace app\micro\components\frequency;
 
 
 use Ets\base\Component;

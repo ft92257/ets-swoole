@@ -1,6 +1,6 @@
 <?php
 
-namespace Ets\components\lock;
+namespace Ets\components\validator;
 
 
 use Ets\base\Component;
