@@ -31,9 +31,6 @@ class Queue extends Component
 
     private $errorCount = 0;
 
-    // 单进程最大同时消费的协程数量
-    protected $maxRunningCount = 5;
-
     /**
      * @Override
      * @return array
@@ -81,9 +78,9 @@ class Queue extends Component
     }
 
     // 开启消费监听
-    public function listen($wait = 1)
+    public function listen()
     {
-        $loop = new Loop(['maxRunningCount' => $this->maxRunningCount]);
+        $loop = new Loop(['maxRunningCount' => 1]);
 
         while ($this->isContinue) {
             try {
@@ -98,7 +95,7 @@ class Queue extends Component
 
                 $message = $this->getDriver()->consume($this);
 
-                $this->executeInCoroutine($message, $loop);
+                $this->executeWithMessage($message, $loop);
 
             } catch (\Throwable $e) {
                 // 连续错误60次后结束进程
@@ -160,22 +157,6 @@ class Queue extends Component
         $this->executeJob($job, null);
     }
 
-    public function executeByMessage(string $messageJson)
-    {
-        $data = json_decode($messageJson, true);
-        $message = Message::build($data['jobArrayData'], $data['attempt']);
-        $job = $this->getJobByMessage($message);
-
-        if (empty($job)) {
-            // 没有待消费的记录，等待3秒重试
-            echo "没有待消费的记录\n";
-
-            return;
-        }
-
-        $this->executeJob($job, null);
-    }
-
     /**
      * @param BaseJob $job
      * @param int $hasRetryCount 第几次重试，0不重试
@@ -214,7 +195,7 @@ class Queue extends Component
         }
     }
 
-    public function executeInCoroutine(Message $message, Loop $loop)
+    public function executeWithMessage(Message $message, Loop $loop)
     {
         if (! $loop->isAllowRunning()) {
             sleep(1);
@@ -228,22 +209,17 @@ class Queue extends Component
             return;
         }
 
-        $queue = $this;
+        $loop->setRunning();
 
-        go(function () use ($job, $message, $loop, $queue) {
+        // 协程初始化
+        CoroutineVar::setObject(EtsConst::COROUTINE_TRACE_ID, uniqid());
 
-            $loop->setRunning();
+        $this->executeJob($job, $message->getAttempt());
 
-            // 协程初始化
-            CoroutineVar::setObject(EtsConst::COROUTINE_TRACE_ID, uniqid());
+        Ets::endClear();
 
-            $queue->executeJob($job, $message->getAttempt());
+        $loop->finishRunning();
 
-            Ets::endClear();
-
-            $loop->finishRunning();
-
-        });
     }
 
 }

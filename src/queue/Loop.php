@@ -7,7 +7,7 @@ use Ets\base\BaseObject;
 
 class Loop extends BaseObject
 {
-    public $maxRunningCount = 5;
+    public $maxRunningCount = 1;
 
     protected $runningCount = 0;
 

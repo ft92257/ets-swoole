@@ -100,7 +100,7 @@ class QueueRabbitMqDriver extends QueueBaseDriver
 
                         $message = Message::build($jobArrayData, $this->currentMessage->get_properties()['attempt'] ?? 0);
 
-                        $queue->executeInCoroutine($message, $loop);
+                        $queue->executeWithMessage($message, $loop);
                     }
                 );
 
@@ -117,6 +117,7 @@ class QueueRabbitMqDriver extends QueueBaseDriver
 
                 Ets::error("队列消费异常：" . $e->getMessage() . "\n", LogCategoryConst::ERROR_QUEUE);
 
+                Ets::endClear();
                 exit;
             }
         }
