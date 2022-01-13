@@ -3,6 +3,7 @@
 namespace Ets\queue\driver;
 
 use Ets\base\EtsException;
+use Ets\consts\LogCategoryConst;
 use Ets\Ets;
 use Ets\helper\ToolsHelper;
 use Ets\pool\connector\RabbitMqConnector;
@@ -27,6 +28,8 @@ class QueueRabbitMqDriver extends QueueBaseDriver
     protected $currentMessage;
 
     const PROPERTY_ATTEMPT = 'attempt';
+
+    private $errorCount = 0;
 
     /**
      * @Override
@@ -111,6 +114,14 @@ class QueueRabbitMqDriver extends QueueBaseDriver
             }  catch (AMQPRuntimeException $e) {
 
                 $this->getChannel()->close();
+
+                // 连续错误60次后结束进程
+                $this->errorCount++;
+                if ($this->errorCount % 60 == 0) {
+                    Ets::error("队列消费异常：" . $e->getMessage() . "\n", LogCategoryConst::ERROR_QUEUE);
+
+                    exit;
+                }
 
                 echo "rabbit异常断开，即将重试:" . $e->getMessage();
 
