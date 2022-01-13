@@ -29,8 +29,6 @@ class QueueRabbitMqDriver extends QueueBaseDriver
 
     const PROPERTY_ATTEMPT = 'attempt';
 
-    private $errorCount = 0;
-
     /**
      * @Override
      * @return array
@@ -115,17 +113,11 @@ class QueueRabbitMqDriver extends QueueBaseDriver
 
                 $this->getChannel()->close();
 
-                // 连续错误60次后结束进程
-                $this->errorCount++;
-                if ($this->errorCount % 60 == 0) {
-                    Ets::error("队列消费异常：" . $e->getMessage() . "\n", LogCategoryConst::ERROR_QUEUE);
-
-                    exit;
-                }
-
                 echo "rabbit异常断开，即将重试:" . $e->getMessage();
 
-                sleep(1);
+                Ets::error("队列消费异常：" . $e->getMessage() . "\n", LogCategoryConst::ERROR_QUEUE);
+
+                exit;
             }
         }
     }
