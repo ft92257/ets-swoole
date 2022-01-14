@@ -22,7 +22,12 @@ class Breaker extends Component implements BreakerInterface
      */
     protected $breakSecond = 180;
 
-    private static $data = [];
+    private $data = [];
+
+    protected function allowInitFields()
+    {
+        return ['countInternal', 'errorLimit', 'breakSecond'];
+    }
 
 
     /**
@@ -32,11 +37,11 @@ class Breaker extends Component implements BreakerInterface
      */
     public function isBreaking($key): bool
     {
-        if (empty(self::$data[$key]['breakingTimeEnd'])) {
+        if (empty($this->data[$key]['breakingTimeEnd'])) {
             return false;
         } else {
             // 未过期则返回熔断中
-            return time() <= self::$data[$key]['breakingTimeEnd'];
+            return time() <= $this->data[$key]['breakingTimeEnd'];
         }
     }
 
@@ -46,27 +51,27 @@ class Breaker extends Component implements BreakerInterface
      */
     public function addError($key)
     {
-        if (empty(self::$data[$key])) {
-            self::$data[$key] = [
+        if (empty($this->data[$key])) {
+            $this->data[$key] = [
                 'count' => 1,
                 'beginTime' => time(),
             ];
         } else {
-            if (self::$data[$key]['beginTime'] > time() - $this->countInternal) {
+            if ($this->data[$key]['beginTime'] < (time() - $this->countInternal)) {
                 // 已过期，重新计数
-                self::$data[$key] = [
+                $this->data[$key] = [
                     'count' => 1,
                     'beginTime' => time(),
                 ];
             } else {
-                self::$data[$key]['count']++;
+                $this->data[$key]['count']++;
             }
         }
 
         // 触发熔断
-        if (self::$data[$key]['count'] >= $this->errorLimit) {
+        if ($this->data[$key]['count'] >= $this->errorLimit) {
 
-            self::$data[$key]['breakingTimeEnd'] = time() + $this->breakSecond;
+            $this->data[$key]['breakingTimeEnd'] = time() + $this->breakSecond;
         }
     }
 
