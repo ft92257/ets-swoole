@@ -1,6 +1,5 @@
 <?php
-namespace app\micro\components\frequency;
-
+namespace Ets\components\frequency;
 
 use Ets\base\Component;
 use Ets\consts\LogCategoryConst;
@@ -26,6 +25,10 @@ class Frequency extends Component
         return Ets::component($this->redisComponent);
     }
 
+    protected function allowInitFields()
+    {
+        return ['redisComponent', 'clusterSplitCount'];
+    }
 
     /**
      * 分散健值计算调用次数，轮询模式
