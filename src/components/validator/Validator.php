@@ -13,7 +13,16 @@ class Validator extends Component
 
     protected $errors = [];
 
-    public function prepare($data)
+    public static function build(array $data)
+    {
+        $validator = new Validator();
+
+        $validator->prepare($data);
+
+        return $validator;
+    }
+
+    public function prepare(array $data)
     {
         $this->data = $data;
         $this->errors = [];
@@ -32,12 +41,12 @@ class Validator extends Component
         return null;
     }
 
-    public function getValue(string $field)
+    protected function getValue(string $field)
     {
         return $this->data[$field] ?? null;
     }
 
-    public function addError($errorMessage, $default)
+    protected function addError(string $errorMessage, string $default)
     {
         $this->errors[] = $errorMessage ? $errorMessage : $default;
     }
