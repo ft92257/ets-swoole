@@ -59,11 +59,25 @@ class Validator extends Component
         }
     }
 
+    public function fieldsIsString(array $fields, string $errorMessage = '')
+    {
+        foreach ($fields as $field) {
+            $this->isString($field, $errorMessage);
+        }
+    }
+
     public function notEmpty(string $field, string $errorMessage = '')
     {
         if (empty($this->getValue($field))) {
 
             $this->addError($errorMessage, $field . '参数不能为空');
+        }
+    }
+
+    public function fieldsNotEmpty(array $fields, string $errorMessage = '')
+    {
+        foreach ($fields as $field) {
+            $this->notEmpty($field, $errorMessage);
         }
     }
 
@@ -75,11 +89,25 @@ class Validator extends Component
         }
     }
 
+    public function fieldsRequired(array $fields, string $errorMessage = '')
+    {
+        foreach ($fields as $field) {
+            $this->required($field, $errorMessage);
+        }
+    }
+
     public function isNumber(string $field, string $errorMessage = '')
     {
         if (! is_numeric($this->getValue($field))) {
 
             $this->addError($errorMessage, $field . '参数必须是数字');
+        }
+    }
+
+    public function fieldsIsNumber(array $fields, string $errorMessage = '')
+    {
+        foreach ($fields as $field) {
+            $this->isNumber($field, $errorMessage);
         }
     }
 
@@ -89,6 +117,13 @@ class Validator extends Component
         if ($len < $min || $len > $max) {
 
             $this->addError($errorMessage, $field . '参数字符长度不合法');
+        }
+    }
+
+    public function fieldsLength(array $fields, int $min, int $max, string $errorMessage = '')
+    {
+        foreach ($fields as $field) {
+            $this->length($field, $min, $max, $errorMessage);
         }
     }
 
