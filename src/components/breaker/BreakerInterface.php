@@ -1,6 +1,6 @@
 <?php
 
-namespace Ets\service\breaker;
+namespace Ets\components\breaker;
 
 
 interface BreakerInterface
@@ -18,5 +18,12 @@ interface BreakerInterface
      * @param $key
      */
     public function addError($key);
+
+    /**
+     * 处理成功
+     * @param $key
+     * @return mixed
+     */
+    public function addSuccess($key);
 
 }

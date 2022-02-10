@@ -1,10 +1,10 @@
 <?php
 
-namespace Ets\service\breaker;
+namespace Ets\components\breaker;
 
 use Ets\base\Component;
 
-class Breaker extends Component implements BreakerInterface
+class RateBreaker extends Component implements BreakerInterface
 {
 
     /**
@@ -12,10 +12,8 @@ class Breaker extends Component implements BreakerInterface
      */
     protected $countInternal = 30;
 
-    /**
-     * @var int $errorLimit 计数间隔内错误上限，到达该次数后将触发熔断
-     */
-    protected $errorLimit = 5;
+    // 错误率比例超过该值则触发熔断
+    protected $errorRate = 0.1;
 
     /**
      * @var int $breakSecond 熔断持续时间（秒）
@@ -26,7 +24,7 @@ class Breaker extends Component implements BreakerInterface
 
     protected function allowInitFields()
     {
-        return ['countInternal', 'errorLimit', 'breakSecond'];
+        return ['countInternal', 'errorRate', 'breakSecond'];
     }
 
 
@@ -51,25 +49,40 @@ class Breaker extends Component implements BreakerInterface
      */
     public function addError($key)
     {
+        $this->addCount($key, true);
+    }
+
+    public function addSuccess($key)
+    {
+        $this->addCount($key, false);
+    }
+
+    protected function addCount($key, $isError)
+    {
+        $initData = [
+            'failCount' => $isError ? 1 : 0,
+            'successCount' => $isError ? 0 : 1,
+            'beginTime' => time(),
+        ];
+
         if (empty($this->data[$key])) {
-            $this->data[$key] = [
-                'count' => 1,
-                'beginTime' => time(),
-            ];
+            $this->data[$key] = $initData;
         } else {
             if ($this->data[$key]['beginTime'] < (time() - $this->countInternal)) {
                 // 已过期，重新计数
-                $this->data[$key] = [
-                    'count' => 1,
-                    'beginTime' => time(),
-                ];
+                $this->data[$key] = $initData;
             } else {
-                $this->data[$key]['count']++;
+                if ($isError) {
+                    $this->data[$key]['failCount']++;
+                } else {
+                    $this->data[$key]['successCount']++;
+                }
             }
         }
 
         // 触发熔断
-        if ($this->data[$key]['count'] >= $this->errorLimit) {
+        $total = $this->data[$key]['failCount'] + $this->data[$key]['successCount'];
+        if ($this->data[$key]['failCount'] / $total >= $this->errorRate) {
 
             $this->data[$key]['breakingTimeEnd'] = time() + $this->breakSecond;
         }

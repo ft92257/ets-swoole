@@ -10,8 +10,8 @@ use Ets\helper\ToolsHelper;
 use Ets\server\handle\service\ServiceHandlerInterface;
 use Ets\server\handle\service\DefaultServiceHandler;
 use Ets\server\result\JsonResult;
-use Ets\service\breaker\Breaker;
-use Ets\service\breaker\BreakerInterface;
+use Ets\components\breaker\Breaker;
+use Ets\components\breaker\BreakerInterface;
 use Ets\service\client\HttpClient;
 
 abstract class MicroServiceHttpClientBase

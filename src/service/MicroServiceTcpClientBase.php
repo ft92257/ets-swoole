@@ -9,8 +9,8 @@ use Ets\Ets;
 use Ets\helper\ToolsHelper;
 use Ets\server\handle\service\DefaultServiceHandler;
 use Ets\server\handle\service\ServiceHandlerInterface;
-use Ets\service\breaker\Breaker;
-use Ets\service\breaker\BreakerInterface;
+use Ets\components\breaker\Breaker;
+use Ets\components\breaker\BreakerInterface;
 use Ets\service\client\TcpClient;
 
 abstract class MicroServiceTcpClientBase
