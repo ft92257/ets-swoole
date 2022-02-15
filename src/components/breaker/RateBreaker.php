@@ -15,7 +15,11 @@ class RateBreaker extends Component implements BreakerInterface
     // 错误率比例超过该值则触发熔断
     protected $errorRate = 0.1;
 
-    /**
+    // 最小统计次数，调用次数大于该值才计算错误率
+    protected $minCount = 10;
+
+
+        /**
      * @var int $breakSecond 熔断持续时间（秒）
      */
     protected $breakSecond = 180;
@@ -82,7 +86,7 @@ class RateBreaker extends Component implements BreakerInterface
 
         // 触发熔断
         $total = $this->data[$key]['failCount'] + $this->data[$key]['successCount'];
-        if ($this->data[$key]['failCount'] / $total >= $this->errorRate) {
+        if ($total >= $this->minCount && $this->data[$key]['failCount'] / $total >= $this->errorRate) {
 
             $this->data[$key]['breakingTimeEnd'] = time() + $this->breakSecond;
         }
