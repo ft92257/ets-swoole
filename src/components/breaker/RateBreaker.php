@@ -28,7 +28,7 @@ class RateBreaker extends Component implements BreakerInterface
 
     protected function allowInitFields()
     {
-        return ['countInternal', 'errorRate', 'breakSecond'];
+        return ['countInternal', 'errorRate', 'breakSecond', 'minCount'];
     }
 
 
